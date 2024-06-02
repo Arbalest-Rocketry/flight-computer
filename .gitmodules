@@ -1,0 +1,15 @@
+[submodule "lib/bmp280"]
+	path = lib/bmp280
+	url = https://github.com/adafruit/Adafruit_BMP280_Library.git
+[submodule "lib/rfm9x"]
+	path = lib/rfm9x
+	url = https://github.com/adafruit/RadioHead.git
+[submodule "lib/teensycores"]
+	path = lib/teensycores
+	url = https://github.com/PaulStoffregen/cores.git
+[submodule "lib/spiflash"]
+	path = lib/spiflash
+	url = https://github.com/adafruit/Adafruit_SPIFlash.git
+[submodule "lib/bno055"]
+	path = lib/bno055
+	url = https://github.com/adafruit/Adafruit_BNO055.git

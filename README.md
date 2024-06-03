@@ -62,6 +62,7 @@ Pictures showing our current **Arbalest Flight Computer** schematics layout
   <img src="images/PCB_Layout_Frontal.png" alt="PCB 3D Front" width="32%" style="display: inline-block;">
   <img src="images/PCB_Layout_Rear.png" alt="PCB 3D Rear" width="32%" style="display: inline-block;">
 </div>
+Credits: PCB Design done by Baseer Yousufzai.
 
 # How it works 
 Simple Illustration 

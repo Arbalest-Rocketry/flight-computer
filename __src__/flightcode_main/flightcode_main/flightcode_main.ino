@@ -15,18 +15,12 @@
 #include <ArduinoEigenDense.h>
 #include "EKF.h" 
 #include "apogee.h"
+#include "rocket_stages.h" 
 
-Adafruit_BMP280 bmp; // BMP280 object
-Adafruit_BNO055 bno = Adafruit_BNO055(55, 0x28); // BNO055 object
 EKF ekf;
 double altitude_backing_array[WINDOW_SIZE]; // Array to store altitude data for the rolling window
 ApogeeDetector detector; // Apogee detector object
-
-// Define pin numbers
-const int pyro1Pin = 20;
-const int pyro2Pin = 21;
-const int pyroDroguePin = 22; 
-const int pyroMainPin = 23;    
+   
 const int sdCardPin = 10;
 const int runCam1TX = 1; 
 const int runCam1RX = 0; 
@@ -49,7 +43,6 @@ SoftwareSerial runCamSerial2(runCam2RX, runCam2TX);
 SoftwareSerial runCamSerial3(runCam3RX, runCam3TX);
 
 // ------------------------- FLAGS --------- //
-bool apogeeReached = false;
 bool mainChuteDeployed = false;
 bool launchDetected = false;
 bool firstStageBurnoutDetected = false;
@@ -172,116 +165,6 @@ void sendTurnOffCommand() {
     sendCommand(0x02); // RCDEVICE_PROTOCOL_CAMERA_TURN_OFF
 }
 
-
-bool detectLaunch() {
-    static double groundAltitude = bmp.readAltitude(1013.25);
-    double currentAltitude = bmp.readAltitude(1013.25);
-    double altitudeDifference = currentAltitude - groundAltitude;
-
-    // Assuming launch is detected if the altitude difference is greater than 5 meters
-    if (altitudeDifference > 5.0) {
-        Serial.println("Launch detected");
-        return true;
-    }
-    return false;
-}
-
-void deployFirstStagePyros() {
-    Serial.println("Deploying first stage pyros");
-    digitalWrite(pyro1Pin, HIGH);
-    delay(1000); // Ensure the pyro is activated
-    digitalWrite(pyro1Pin, LOW);
-}
-
-bool detectFirstStageBurnout() {
-    static double lastAltitude = 0;
-    static unsigned long lastTime = millis();
-    unsigned long currentTime = millis();
-    double currentAltitude = bmp.readAltitude(1013.25);
-
-    // Check if altitude remains constant (±0.1 meter) for more than 2 seconds
-    if (abs(currentAltitude - lastAltitude) < 0.1) {
-        if (currentTime - lastTime > 2000) {
-            Serial.println("First stage burnout detected");
-            return true;
-        }
-    } else {
-        lastTime = currentTime;
-    }
-    lastAltitude = currentAltitude;
-    return false;
-}
-
-void separateStages() {
-    Serial.println("Separating stages");
-    digitalWrite(pyro1Pin, HIGH);
-    delay(1000); // Ensure the separation pyro is activated
-    digitalWrite(pyro1Pin, LOW);
-}
-
-void lightUpperStageMotor() {
-    Serial.println("Lighting upper stage motor");
-    digitalWrite(pyro2Pin, HIGH);
-    delay(1000); // Ensure the upper stage motor is ignited
-    digitalWrite(pyro2Pin, LOW);
-}
-
-void deploySecondStageDroguePyros() {
-    if (is_apogee_reached(&detector) && !apogeeReached) {
-        Serial.println("Apogee Reached!");
-        Serial.println("Deploying second stage pyros (drogue chute)");
-        delay(30000);
-        digitalWrite(pyroDroguePin, HIGH);
-        delay(1000); // Ensure the pyro is activated
-        digitalWrite(pyroDroguePin, LOW);
-    } Serial.println("Apogee not reached yet.");
-}
-
-void deployMainParachutePyros() {
-        if (apogeeReached && !mainChuteDeployed) {
-        double currentAltitude = bmp.readAltitude(1013.25);
-        if (currentAltitude <= 500) { // Assuming altitude is in meters
-            Serial.println("500 meters above ground level on descent reached");
-            Serial.println("Deploying main parachute pyros");
-            digitalWrite(pyroMainPin, HIGH);
-            delay(1000);
-            digitalWrite(pyroMainPin, LOW);
-            mainChuteDeployed = true;
-        }
-    }
-}
-
-bool detectLanding() {
-    static double lastAltitude = 0;
-    double currentAltitude = bmp.readAltitude(1013.25);
-    static unsigned long landedTime = millis();
-
-    // Check if altitude remains constant (±0.1 meter) for more than 5 seconds
-    if (abs(currentAltitude - lastAltitude) < 0.1) {
-        if (millis() - landedTime > 5000) {
-            Serial.println("Landing detected");
-            return true;
-        }
-    } else {
-        landedTime = millis();
-    }
-    lastAltitude = currentAltitude;
-    return false;
-}
-
-void enterLowPowerMode() {
-    Serial.println("Entering low power mode");
-
-    // Set BNO, GPS to low power mode (I am putting pseudocode for now)
-    bno.setExtCrystalUse(false); // Example of setting BNO055 to low power mode
-
-    while (true) {
-        transmitData();
-        logData();
-        delay(30000); // Transmit data every 30 seconds
-    }
-}
-
 void logData() {
     File dataFile = SD.open("datalog.txt", FILE_WRITE);
     if (dataFile) {
@@ -357,8 +240,14 @@ void transmitData() {
 }
 
 void setup() {
-    // Initialize serial communication
+    // Serial and pin initialization
     Serial.begin(9600);
+    while (!Serial) delay(10); // Wait for serial port to connect
+    pinMode(pyro1Pin, OUTPUT);
+    pinMode(pyro2Pin, OUTPUT);
+    pinMode(pyroDroguePin, OUTPUT);
+    pinMode(pyroMainPin, OUTPUT);
+    
     runCamSerial1.begin(9600);
     runCamSerial2.begin(9600);
     runCamSerial3.begin(9600);
@@ -386,12 +275,6 @@ void setup() {
                     Adafruit_BMP280::SAMPLING_X16,    /* Pressure oversampling */
                     Adafruit_BMP280::FILTER_X16,      /* Filtering. */
                     Adafruit_BMP280::STANDBY_MS_125); /* Standby time. */
-
-    // Initialize pins
-    pinMode(pyro1Pin, OUTPUT);
-    pinMode(pyro2Pin, OUTPUT);
-    pinMode(pyroDroguePin, OUTPUT);
-    pinMode(pyroMainPin, OUTPUT);
 
     // Initialize SD card
     if (!SD.begin(sdCardPin)) {
@@ -457,7 +340,27 @@ void loop() {
  /*/////////////////////////////////////////////////*/  
           /* TODO: Add Rocket Stages Logic */
  /*/////////////////////////////////////////////////*/ 
-   
+ 
+if (!launchDetected) {
+        launchDetected = detectLaunch(bmp);
+    } else if (!firstStageBurnoutDetected) {
+        firstStageBurnoutDetected = detectFirstStageBurnout(bmp);
+    } else if (firstStageBurnoutDetected && !apogeeReached) {
+        deployFirstStagePyros();
+    } else if (firstStageBurnoutDetected && apogeeReached && !mainChuteDeployed) {
+        separateStages();
+        lightUpperStageMotor();
+        deploySecondStageDroguePyros(detector, bmp, apogeeReached);
+    } else if (apogeeReached && mainChuteDeployed) {
+        if (!isLanded) {
+            isLanded = detectLanding(bmp);
+        } else {
+            enterLowPowerMode(logData, transmitData);
+        }
+    }
+
+    delay(100); // I am delaying to prevent excess polling
+    
     /*
     // Read orientation from BNO055 sensor
     imu::Vector<3> euler = bno.getVector(Adafruit_BNO055::VECTOR_EULER);
@@ -483,8 +386,12 @@ void loop() {
     Serial.print(", ");
     Serial.println(quat[3], 4);
     */
-    logData();
-    transmitData();
-    //handleCameraErrors(); // Check for camera errors
-    delay(100);
+
+    // Check for low power mode
+    if(!isLowPowerModeEntered){
+        logData();
+        transmitData();
+        //handleCameraErrors(); // Check for camera errors
+        delay(100);
+    }
 }

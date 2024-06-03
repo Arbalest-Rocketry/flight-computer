@@ -1,6 +1,9 @@
 // apogee.cpp
 #include "apogee.h"
 
+Adafruit_BMP280 bmp; // BMP280 object
+bool apogeeReached = false;
+
 // Rolling Window Functions
 void init_rolling_window(RollingWindow *rw, double *pBackingArray, size_t capacity) {
     rw->backing_array = pBackingArray;

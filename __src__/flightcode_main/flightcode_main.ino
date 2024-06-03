@@ -11,6 +11,16 @@
 #include <iostream>
 #include <cmath>
 #include <cstring>
+#include <ArduinoEigen.h>
+#include <ArduinoEigenDense.h>
+#include "EKF.h" 
+#include "apogee.h"
+
+Adafruit_BMP280 bmp; // BMP280 object
+Adafruit_BNO055 bno = Adafruit_BNO055(55, 0x28); // BNO055 object
+EKF ekf;
+double altitude_backing_array[WINDOW_SIZE]; // Array to store altitude data for the rolling window
+ApogeeDetector detector; // Apogee detector object
 
 // Define pin numbers
 const int pyro1Pin = 20;
@@ -38,9 +48,6 @@ SoftwareSerial runCamSerial1(runCam1RX, runCam1TX);
 SoftwareSerial runCamSerial2(runCam2RX, runCam2TX);
 SoftwareSerial runCamSerial3(runCam3RX, runCam3TX);
 
-#define WINDOW_SIZE 20
-#define DECREASE_THRESHOLD 2 // Number of consecutive decreases to confirm apogee
-
 // ------------------------- FLAGS --------- //
 bool apogeeReached = false;
 bool mainChuteDeployed = false;
@@ -48,93 +55,6 @@ bool launchDetected = false;
 bool firstStageBurnoutDetected = false;
 bool isLanded = false;
 // ----------------------------------------- //
-
-unsigned long startTime;  // To store the start time for camera activation
-
-typedef struct {
-    double *backing_array;
-    size_t capacity;
-    size_t size;
-    size_t front;
-    double sum_of_elements;
-} RollingWindow;
-
-typedef struct {
-    RollingWindow altitude_window;
-    double last_altitude;
-    int apogee_reached;
-    int decrease_count; // Track consecutive decreases
-} ApogeeDetector;
-
-Adafruit_BMP280 bmp; // bmp object
-Adafruit_BNO055 bno = Adafruit_BNO055(55, 0x28); // BNO055 object
-
-double altitude_backing_array[WINDOW_SIZE];
-ApogeeDetector detector;
-
-// Rolling Window Functions
-void init_rolling_window(RollingWindow *rw, double *pBackingArray, size_t capacity) {
-    rw->backing_array = pBackingArray;
-    rw->capacity = capacity;
-    rw->size = 0;
-    rw->front = 0;
-    rw->sum_of_elements = 0.0;
-}
-
-size_t mod_rolling_window(size_t index, size_t modulo) {
-    return (index % modulo + modulo) % modulo;
-}
-
-void add_data_point_rolling_window(RollingWindow *rw, double dataPoint) {
-    if (rw->size >= rw->capacity) {
-        rw->sum_of_elements -= rw->backing_array[mod_rolling_window(rw->front, rw->capacity)];
-        rw->front = mod_rolling_window(rw->front + 1, rw->capacity);
-        rw->size--;
-    }
-    size_t back_insertion_idx = mod_rolling_window(rw->front + rw->size, rw->capacity);
-    rw->backing_array[back_insertion_idx] = dataPoint;
-    rw->sum_of_elements += dataPoint;
-    rw->size++;
-}
-
-double get_latest_datapoint_rolling_window(RollingWindow *rw) {
-    return rw->backing_array[mod_rolling_window(rw->front + rw->size - 1, rw->capacity)];
-}
-
-double get_earliest_datapoint_rolling_window(RollingWindow *rw) {
-    return rw->backing_array[mod_rolling_window(rw->front, rw->capacity)];
-}
-
-// Apogee Detector Functions
-void init_apogee_detector(ApogeeDetector *detector, double *backing_array, size_t capacity) {
-    init_rolling_window(&detector->altitude_window, backing_array, capacity);
-    detector->last_altitude = -1.0;
-    detector->apogee_reached = 0;
-    detector->decrease_count = 0;
-}
-
-void update_apogee_detector(ApogeeDetector *detector, double current_altitude) {
-    add_data_point_rolling_window(&detector->altitude_window, current_altitude);
-
-    if (detector->apogee_reached) {
-        return; // Exit the function if apogee has already been reached
-    }
-
-    if (detector->last_altitude >= 0 && current_altitude < detector->last_altitude) {
-        detector->decrease_count++;
-    } else {
-        detector->decrease_count = 0; // Reset counter if altitude increases or stays the same
-    }
-
-    if (detector->decrease_count >= DECREASE_THRESHOLD) {
-        detector->apogee_reached = 1;
-    }
-    detector->last_altitude = current_altitude;
-}
-
-int is_apogee_reached(ApogeeDetector *detector) {
-    return detector->apogee_reached;
-}
 
 // Function to convert Euler angles to quaternions
 void eulerToQuaternion(float yaw, float pitch, float roll, float* qr, float* qi, float* qj, float* qk) {
@@ -175,372 +95,6 @@ uint8_t crc8_dvb_s2(uint8_t crc, uint8_t a) {
         else crc = crc << 1;
     }
     return crc;
-}
-
-// Function to convert radians to degrees
-float rad2deg(float rad) {
-    return rad / M_PI * 180;
-}
-
-// Function to convert degrees to radians
-float deg2rad(float deg) {
-    return deg / 180 * M_PI;
-}
-
-// Function to normalize a quaternion
-void normalizeQuat(float* q) {
-    float mag = sqrt(q[0] * q[0] + q[1] * q[1] + q[2] * q[2] + q[3] * q[3]);
-    if (mag == 0) return; // Avoid division by zero
-    q[0] /= mag;
-    q[1] /= mag;
-    q[2] /= mag;
-    q[3] /= mag;
-}
-
-
-// Quaternion to rotation matrix
-void getRotMat(float* q, float rotMat[3][3]) {
-    rotMat[0][0] = q[0] * q[0] + q[1] * q[1] - q[2] * q[2] - q[3] * q[3];
-    rotMat[0][1] = 2 * (q[1] * q[2] - q[0] * q[3]);
-    rotMat[0][2] = 2 * (q[1] * q[3] + q[0] * q[2]);
-    rotMat[1][0] = 2 * (q[1] * q[2] + q[0] * q[3]);
-    rotMat[1][1] = q[0] * q[0] - q[1] * q[1] + q[2] * q[2] - q[3] * q[3];
-    rotMat[1][2] = 2 * (q[2] * q[3] - q[0] * q[1]);
-    rotMat[2][0] = 2 * (q[1] * q[3] - q[0] * q[2]);
-    rotMat[2][1] = 2 * (q[2] * q[3] + q[0] * q[1]);
-    rotMat[2][2] = q[0] * q[0] - q[1] * q[1] - q[2] * q[2] + q[3] * q[3];
-}
-
-// Get Euler angles from quaternion
-void getEulerAngles(float* q, float* yaw, float* pitch, float* roll) {
-    float rotMat[3][3];
-    getRotMat(q, rotMat);
-    float test = -rotMat[2][0];
-    if (test > 0.99999) {
-        *yaw = 0;
-        *pitch = M_PI / 2;
-        *roll = atan2(rotMat[0][1], rotMat[0][2]);
-    } else if (test < -0.99999) {
-        *yaw = 0;
-        *pitch = -M_PI / 2;
-        *roll = atan2(-rotMat[0][1], -rotMat[0][2]);
-    } else {
-        *yaw = atan2(rotMat[1][0], rotMat[0][0]);
-        *pitch = asin(-rotMat[2][0]);
-        *roll = atan2(rotMat[2][1], rotMat[2][2]);
-    }
-    *yaw = rad2deg(*yaw);
-    *pitch = rad2deg(*pitch);
-    *roll = rad2deg(*roll);
-}
-
-class System {
-public:
-    float xHat[7];
-    float yHatBar[3];
-    float p[7][7];
-    float Q[7][7];
-    float R[6][6];
-    float K[7][6];
-    float A[7][7];
-    float B[7][6];
-    float C[6][7];
-    float xHatBar[7];
-    float xHatPrev[7];
-    float pBar[7][7];
-    float accelReference[3];
-    float magReference[3];
-    float mag_Ainv[3][3];
-    float mag_b[3];
-
-    System() {
-        float quaternion[4] = {1, 0, 0, 0};
-        float bias[3] = {0, 0, 0};
-        memcpy(xHat, quaternion, sizeof(quaternion));
-        memcpy(xHat + 4, bias, sizeof(bias));
-        memset(yHatBar, 0, sizeof(yHatBar));
-        for (int i = 0; i < 7; i++) {
-            for (int j = 0; j < 7; j++) {
-                p[i][j] = (i == j) ? 0.01f : 0.0f;
-                Q[i][j] = (i == j) ? 0.001f : 0.0f;
-            }
-        }
-        for (int i = 0; i < 6; i++) {
-            for (int j = 0; j < 6; j++) {
-                R[i][j] = (i == j) ? 0.1f : 0.0f;
-            }
-        }
-        accelReference[0] = 0;
-        accelReference[1] = 0;
-        accelReference[2] = -1;
-        magReference[0] = 0;
-        magReference[1] = -1;
-        magReference[2] = 0;
-
-        float mag_Ainv_tmp[3][3] = {
-            {2.06423128e-03, -1.04778851e-04, -1.09416190e-06},
-            {-1.04778851e-04, 1.91693168e-03, 1.79409312e-05},
-            {-1.09416190e-06, 1.79409312e-05, 1.99819154e-03}
-        };
-        memcpy(mag_Ainv, mag_Ainv_tmp, sizeof(mag_Ainv));
-        float mag_b_tmp[3] = {80.51340236f, 37.08931099f, 105.6731885f};
-        memcpy(mag_b, mag_b_tmp, sizeof(mag_b));
-    }
-
-    void normalizeQuat(float* q) {
-        float mag = sqrt(q[0] * q[0] + q[1] * q[1] + q[2] * q[2] + q[3] * q[3]);
-        q[0] /= mag;
-        q[1] /= mag;
-        q[2] /= mag;
-        q[3] /= mag;
-    }
-
-    void getRotMat(float* q, float rotMat[3][3]) {
-        float q0 = q[0], q1 = q[1], q2 = q[2], q3 = q[3];
-        rotMat[0][0] = q0*q0 + q1*q1 - q2*q2 - q3*q3;
-        rotMat[0][1] = 2 * (q1*q2 - q0*q3);
-        rotMat[0][2] = 2 * (q1*q3 + q0*q2);
-        rotMat[1][0] = 2 * (q1*q2 + q0*q3);
-        rotMat[1][1] = q0*q0 - q1*q1 + q2*q2 - q3*q3;
-        rotMat[1][2] = 2 * (q2*q3 - q0*q1);
-        rotMat[2][0] = 2 * (q1*q3 - q0*q2);
-        rotMat[2][1] = 2 * (q2*q3 + q0*q1);
-        rotMat[2][2] = q0*q0 - q1*q1 - q2*q2 + q3*q3;
-    }
-
-    void getAccelVector(float* a, float* accelOut) {
-        float accelMag = sqrt(a[0] * a[0] + a[1] * a[1] + a[2] * a[2]);
-        for (int i = 0; i < 3; i++) {
-            accelOut[i] = a[i] / accelMag;
-        }
-    }
-
-    void getMagVector(float* m, float* magOut) {
-        float magGaussRaw[3];
-        for (int i = 0; i < 3; i++) {
-            magGaussRaw[i] = 0;
-            for (int j = 0; j < 3; j++) {
-                magGaussRaw[i] += mag_Ainv[i][j] * (m[j] - mag_b[j]);
-            }
-        }
-        float rotMat[3][3];
-        getRotMat(xHat, rotMat);
-        float magGauss_N[3];
-        for (int i = 0; i < 3; i++) {
-            magGauss_N[i] = 0;
-            for (int j = 0; j < 3; j++) {
-                magGauss_N[i] += rotMat[i][j] * magGaussRaw[j];
-            }
-        }
-        magGauss_N[2] = 0;
-        float magNorm = sqrt(magGauss_N[0] * magGauss_N[0] + magGauss_N[1] * magGauss_N[1]);
-        for (int i = 0; i < 2; i++) {
-            magGauss_N[i] /= magNorm;
-        }
-        for (int i = 0; i < 3; i++) {
-            magOut[i] = 0;
-            for (int j = 0; j < 3; j++) {
-                magOut[i] += rotMat[j][i] * magGauss_N[j];
-            }
-        }
-    }
-
-    void getJacobianMatrix(float* reference, float hPrime[3][4]) {
-        float* qHatPrev = xHatPrev;
-        float e[3][4] = {
-            {2 * qHatPrev[2], -2 * qHatPrev[3], 2 * qHatPrev[0], -2 * qHatPrev[1]},
-            {-2 * qHatPrev[1], -2 * qHatPrev[0], -2 * qHatPrev[3], -2 * qHatPrev[2]},
-            {2 * qHatPrev[0], -2 * qHatPrev[1], -2 * qHatPrev[2], 2 * qHatPrev[3]}
-        };
-        for (int i = 0; i < 3; i++) {
-            float rowSum = 0;
-            for (int j = 0; j < 4; j++) {
-                rowSum += e[i][j] * qHatPrev[j];
-            }
-            float refI = reference[i];
-            for (int j = 0; j < 4; j++) {
-                hPrime[i][j] = (refI - rowSum) * e[i][j];
-            }
-        }
-    }
-
-    void gethPrime(float* accel, float* mag, float hPrime[6][7]) {
-        float qHatPrev[4] = {xHatPrev[0], xHatPrev[1], xHatPrev[2], xHatPrev[3]};
-        float accelOut[3];
-        getAccelVector(accel, accelOut);
-        float magOut[3];
-        getMagVector(mag, magOut);
-        for (int i = 0; i < 3; i++) {
-            yHatBar[i] = accelOut[i];
-            yHatBar[i + 3] = magOut[i];
-        }
-        float accelHPrime[3][4];
-        getJacobianMatrix(accelReference, accelHPrime);
-        float magHPrime[3][4];
-        getJacobianMatrix(magReference, magHPrime);
-        for (int i = 0; i < 3; i++) {
-            for (int j = 0; j < 4; j++) {
-                hPrime[i][j] = accelHPrime[i][j];
-                hPrime[i + 3][j] = magHPrime[i][j];
-            }
-        }
-        for (int i = 0; i < 6; i++) {
-            for (int j = 4; j < 7; j++) {
-                hPrime[i][j] = 0;
-            }
-        }
-    }
-
-    void propagateEKF(float* accel, float* mag) {
-        // Prediction step
-        for (int i = 0; i < 7; i++) {
-            xHatBar[i] = xHat[i];
-            for (int j = 0; j < 7; j++) {
-                pBar[i][j] = p[i][j] + Q[i][j];
-            }
-        }
-        // Update step
-        float hPrime[6][7];
-        gethPrime(accel, mag, hPrime);
-        float hPrimeT[7][6];
-        for (int i = 0; i < 6; i++) {
-            for (int j = 0; j < 7; j++) {
-                hPrimeT[j][i] = hPrime[i][j];
-            }
-        }
-        float s[6][6] = {0};
-        for (int i = 0; i < 6; i++) {
-            for (int j = 0; j < 6; j++) {
-                for (int k = 0; k < 7; k++) {
-                    s[i][j] += hPrime[i][k] * pBar[k][j];
-                }
-            }
-        }
-        for (int i = 0; i < 6; i++) {
-            for (int j = 0; j < 6; j++) {
-                s[i][j] += R[i][j];
-            }
-        }
-        // Calculate Kalman gain
-        float sInv[6][6];
-        invertMatrix(s, sInv);
-        for (int i = 0; i < 7; i++) {
-            for (int j = 0; j < 6; j++) {
-                K[i][j] = 0;
-                for (int k = 0; k < 7; k++) {
-                    K[i][j] += pBar[i][k] * hPrimeT[k][j];
-                }
-                for (int k = 0; k < 6; k++) {
-                    K[i][j] *= sInv[j][k];
-                }
-            }
-        }
-        // Update estimate
-        float yBar[6];
-        for (int i = 0; i < 6; i++) {
-            yBar[i] = (i < 3) ? accel[i] : mag[i - 3];
-            yBar[i] -= yHatBar[i];
-        }
-        for (int i = 0; i < 7; i++) {
-            for (int j = 0; j < 6; j++) {
-                xHat[i] += K[i][j] * yBar[j];
-            }
-        }
-        normalizeQuat(xHat);
-        // Update error covariance
-        float KH[7][7] = {0};
-        for (int i = 0; i < 7; i++) {
-            for (int j = 0; j < 7; j++) {
-                for (int k = 0; k < 6; k++) {
-                    KH[i][j] += K[i][k] * hPrime[k][j];
-                }
-            }
-        }
-        float I_KH[7][7];
-        for (int i = 0; i < 7; i++) {
-            for (int j = 0; j < 7; j++) {
-                I_KH[i][j] = (i == j) ? 1 - KH[i][j] : -KH[i][j];
-            }
-        }
-        for (int i = 0; i < 7; i++) {
-            for (int j = 0; j < 7; j++) {
-                p[i][j] = 0;
-                for (int k = 0; k < 7; k++) {
-                    p[i][j] += I_KH[i][k] * pBar[k][j];
-                }
-            }
-        }
-    }
-
-void invertMatrix(float input[6][6], float output[6][6]) {
-    int n = 6;
-    float LU[6][6];
-    float tempRow[6];
-
-    // Initialize LU matrix with input
-    for (int i = 0; i < n; i++) {
-        for (int j = 0; j < n; j++) {
-            LU[i][j] = input[i][j];
-            output[i][j] = (i == j) ? 1.0f : 0.0f; // Output matrix initialized as identity matrix
-        }
-    }
-
-    // Perform LU decomposition with partial pivoting
-    for (int k = 0; k < n; k++) {
-        // Find pivot
-        int pivot = k;
-        for (int i = k + 1; i < n; i++) {
-            if (fabs(LU[i][k]) > fabs(LU[pivot][k])) {
-                pivot = i;
-            }
-        }
-
-        // Swap rows if necessary
-        if (pivot != k) {
-            for (int j = 0; j < n; j++) {
-                std::swap(LU[pivot][j], LU[k][j]);
-                std::swap(output[pivot][j], output[k][j]);
-            }
-        }
-
-        // Compute multipliers
-        for (int i = k + 1; i < n; i++) {
-            if (LU[k][k] != 0.0) {
-                float multiplier = LU[i][k] / LU[k][k];
-                for (int j = k; j < n; j++) {
-                    LU[i][j] -= multiplier * LU[k][j];
-                }
-                for (int j = 0; j < n; j++) {
-                    output[i][j] -= multiplier * output[k][j];
-                }
-            }
-        }
-    }
-
-    // Back substitution to solve for the inverted matrix
-    for (int k = n - 1; k >= 0; k--) {
-        if (LU[k][k] != 0.0) {
-            for (int j = 0; j < n; j++) {
-                tempRow[j] = output[k][j] / LU[k][k];
-            }
-            for (int i = 0; i < k; i++) {
-                for (int j = 0; j < n; j++) {
-                    output[i][j] -= LU[i][k] * tempRow[j];
-                }
-            }
-            for (int j = 0; j < n; j++) {
-                output[k][j] = tempRow[j];
-            }
-        }
-    }
-}
-};
-
-System sys; // EKF system object
-
-// Function to propagate EKF
-void propagateEKF(float* accel, float* mag) {
-    sys.propagateEKF(accel, mag);
 }
 
 // Define expected responses
@@ -864,52 +418,47 @@ void setup() {
 
     // Initialize apogee detector
     init_apogee_detector(&detector, altitude_backing_array, WINDOW_SIZE);
-    startTime = millis(); // Initialize start time
 }
 
-void loop() {    
-    // Read current altitude
-    double currentAltitude = bmp.readAltitude(1013.25); // Assuming sea level pressure is 1013.25 hPa
-
-    // Detect launch
-    if (!launchDetected) {
-        launchDetected = detectLaunch();
-    }
-
-    // Detect first stage burnout and deploy deployment pyros
-    if (launchDetected && !firstStageBurnoutDetected) {
-        firstStageBurnoutDetected = detectFirstStageBurnout();
-        if (firstStageBurnoutDetected) {
-            deployFirstStagePyros();
-        }
-    }
-
-    // Light upper stage motor 10 seconds after stage separation
-    if (firstStageBurnoutDetected && millis() - startTime > 10000) {
-        lightUpperStageMotor();
-    }
+void loop() {
+  
+    double current_altitude = bmp.readAltitude(1013.25); // Assuming sea level pressure
+    update_apogee_detector(&detector, current_altitude);
     
-    // Update apogee detector with the current altitude
-    update_apogee_detector(&detector, currentAltitude);
-
-    // Deploy second stage pyros (drogue chute) if apogee is reached
-    deploySecondStageDroguePyros();
-
-    // Deploy main parachute pyros at 500 meters above ground level on descent
-    deployMainParachutePyros();
-
-    // Detect landing
-    if (detectLanding()) {
-        enterLowPowerMode();
+    if (is_apogee_reached(&detector) && !apogeeReached) {
+        apogeeReached = true;
+        // Additional logic for apogee event
     }
-    
-    // Print current altitude for debugging purposes
-    Serial.print("Current altitude: ");
-    Serial.println(currentAltitude);
+    delay(100); // Adjust delay as needed
+    /*
+    sensors_event_t event;
+    bno.getEvent(&event);
 
-    // Wait for a second before the next loop
-    delay(1000);
-    
+    // Get sensor data
+    Vector3d accel(event.acceleration.x, event.acceleration.y, event.acceleration.z);
+    Vector3d mag(event.magnetic.x, event.magnetic.y, event.magnetic.z);
+    Vector3d gyro(event.gyro.x, event.gyro.y, event.gyro.z);
+
+    double dt = 0.01; // Time step, adjust as needed
+
+    ekf.predict(gyro, dt);
+    ekf.update(accel, mag);
+
+    Eigen::Vector3d eulerAngles = ekf.getEulerAngles(ekf.getXHat().head<4>());
+
+    Serial.print("Roll: ");
+    Serial.print(eulerAngles(0) * 180 / M_PI);
+    Serial.print(", Pitch: ");
+    Serial.print(eulerAngles(1) * 180 / M_PI);
+    Serial.print(", Yaw: ");
+    Serial.println(eulerAngles(2) * 180 / M_PI);
+    */
+
+ /*/////////////////////////////////////////////////*/  
+          /* TODO: Add Rocket Stages Logic */
+ /*/////////////////////////////////////////////////*/ 
+   
+    /*
     // Read orientation from BNO055 sensor
     imu::Vector<3> euler = bno.getVector(Adafruit_BNO055::VECTOR_EULER);
     float yaw = euler.x();
@@ -933,18 +482,7 @@ void loop() {
     Serial.print(quat[2], 4);
     Serial.print(", ");
     Serial.println(quat[3], 4);
-    
-    // Read acceleration and magnetometer data
-    imu::Vector<3> accel = bno.getVector(Adafruit_BNO055::VECTOR_LINEARACCEL);
-    imu::Vector<3> mag = bno.getVector(Adafruit_BNO055::VECTOR_MAGNETOMETER);
-    
-    /*
-    // Propagate EKF with sensor data
-    float accelData[3] = {accel.x(), accel.y(), accel.z()};
-    float magData[3] = {mag.x(), mag.y(), mag.z()};
-    propagateEKF(accelData, magData);
     */
-    
     logData();
     transmitData();
     //handleCameraErrors(); // Check for camera errors

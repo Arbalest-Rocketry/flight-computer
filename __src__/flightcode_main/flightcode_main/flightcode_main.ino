@@ -22,12 +22,12 @@ double altitude_backing_array[WINDOW_SIZE]; // Array to store altitude data for 
 ApogeeDetector detector; // Apogee detector object
    
 const int sdCardPin = 10;
-const int runCam1TX = 1; 
-const int runCam1RX = 0; 
-const int runCam2TX = 8; 
-const int runCam2RX = 7; 
-const int runCam3TX = 14; 
-const int runCam3RX = 15; 
+const int RunCam1_TX = 1; 
+const int RunCam1_RX = 0; 
+const int RunCam2_TX = 8; 
+const int RunCam2_RX = 7; 
+const int RunCam3_TX = 14; 
+const int RunCam3_RX = 15; 
 
 // LoRa settings
 #define RFM95_CS 1
@@ -38,9 +38,9 @@ const int runCam3RX = 15;
 RH_RF95 rf95(RFM95_CS, RFM95_INT);  // Declare the rf95 object
 
 // Initialize SoftwareSerial for RunCam communication
-SoftwareSerial runCamSerial1(runCam1RX, runCam1TX); 
-SoftwareSerial runCamSerial2(runCam2RX, runCam2TX);
-SoftwareSerial runCamSerial3(runCam3RX, runCam3TX);
+SoftwareSerial runCamSerial1(RunCam1_RX, RunCam1_TX); 
+SoftwareSerial runCamSerial2(RunCam2_RX, RunCam2_TX);
+SoftwareSerial runCamSerial3(RunCam3_RX, RunCam3_TX);
 
 // ------------------------- FLAGS --------- //
 bool mainChuteDeployed = false;

@@ -91,9 +91,9 @@ uint8_t crc8_dvb_s2(uint8_t crc, uint8_t a) {
 }
 
 // Define expected responses
-const uint8_t expectedResponse1 = 0x81; // Confirmation on Power On
-const uint8_t expectedResponse2 = 0x82; // Confirmation on Power Off
-const uint8_t expectedResponse3 = 0x83; // Confirmation on Start Recording
+const uint8_t expectedResponse1 = 0x11; // (0x01 << 4) + 0x01 = 0x10 + 0x01 = 0x11 (Confirmation on Power On)
+const uint8_t expectedResponse2 = 0x21; // (0x02 << 4) + 0x01 = 0x20 + 0x01 = 0x21 (Confirmation on Power Off)
+const uint8_t expectedResponse3 = 0x31; // (0x03 << 4) + 0x01 = 0x30 + 0x01 = 0x31 (Confirmation on Start Recording)
 
 void handleCameraErrors() {
     // Check if the camera communication ports are not initialized

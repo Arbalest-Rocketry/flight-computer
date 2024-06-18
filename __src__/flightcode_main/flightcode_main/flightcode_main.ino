@@ -19,7 +19,7 @@
 EKF ekf;
 double altitude_backing_array[WINDOW_SIZE]; // Array to store altitude data for the rolling window
 ApogeeDetector detector; // Apogee detector object
-   
+
 const int sdCardPin = 10;
 
 // LoRa settings
@@ -234,11 +234,13 @@ void setup() {
     rf95.setFrequency(RF95_FREQ);
     rf95.setTxPower(23, false);
     
+    startRec();
+
     // Wait for flight computer to turn on (10 minutes)
     // delay(600000); // 600000 milliseconds = 10 minutes
     // TODO: Find a way to delay cam from turning on for 10 minutes.
-    delay(10000);
-    startRec();
+    delay(100000);
+    // startRec();
 
     // Initialize apogee detector
     init_apogee_detector(&detector, altitude_backing_array, WINDOW_SIZE);

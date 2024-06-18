@@ -32,12 +32,13 @@ The electronics mount CAD design showcases the placement of PCBs within the rock
 
 Credits: Electronics Mount CAD design by Caelan Babenko
 
-# Nosecone (in construction) & Fuselage Housing for the Electronics Mount
+<!-- # Nosecone (in construction) & Fuselage Housing for the Electronics Mount
 <div style="text-align: center;">
   <img src="images/Nosecone_Tube.jpg" alt="Nosecone image" width="100%" style="display: inline-block; margin-right: 10px;">
 </div>
 
 Credits: Nosecone rolled by Sean Hwang, Caelan Babenko, Jordan Birley |  Fuselage Housing CAD design by Caelan Babenko
+-->
 
 # Testing Setup
 Here's an image showing my testing setup for the flight computer(left) and ground station(right):
@@ -168,7 +169,7 @@ To simulate real-flight conditions and verify the functionality of the Runcam Sp
 <div style="text-align: center;">
   <img src="images/RunCamSplit4_compared_to_palm.jpg" alt="RCS4" width="25%" style="display: inline-block;">
   <img src="images/RunCamSplit4_isolated.jpg" alt="RCS4" width="33.3%" style="display: inline-block;">
-  <img src="images/RunCam_connected_to_FC.jpg" alt="RCS4" width="25%" style="display: inline-block;">
+  <img src="images/runcamsplit4_setup.jpg" alt="RCS4" width="25%" style="display: inline-block;">
 </div>
 
 ### Step 1: Gather Necessary Components

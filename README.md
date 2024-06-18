@@ -168,7 +168,7 @@ To simulate real-flight conditions and verify the functionality of the Runcam Sp
 <div style="text-align: center;">
   <img src="images/RunCamSplit4_compared_to_palm.jpg" alt="RCS4" width="25%" style="display: inline-block;">
   <img src="images/RunCamSplit4_isolated.jpg" alt="RCS4" width="33.3%" style="display: inline-block;">
-  <img src="images/RunCam_connected_to_FC.jpg" alt="RCS4" width="25%" style="display: inline-block;">
+  <img src="images/runcamsplit4_setup.jpg" alt="RCS4" width="25%" style="display: inline-block;">
 </div>
 
 ### Step 1: Gather Necessary Components

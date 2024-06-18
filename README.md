@@ -32,12 +32,13 @@ The electronics mount CAD design showcases the placement of PCBs within the rock
 
 Credits: Electronics Mount CAD design by Caelan Babenko
 
-# Nosecone (in construction) & Fuselage Housing for the Electronics Mount
+<!-- # Nosecone (in construction) & Fuselage Housing for the Electronics Mount
 <div style="text-align: center;">
   <img src="images/Nosecone_Tube.jpg" alt="Nosecone image" width="100%" style="display: inline-block; margin-right: 10px;">
 </div>
 
 Credits: Nosecone rolled by Sean Hwang, Caelan Babenko, Jordan Birley |  Fuselage Housing CAD design by Caelan Babenko
+-->
 
 # Testing Setup
 Here's an image showing my testing setup for the flight computer(left) and ground station(right):

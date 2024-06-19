@@ -1,45 +1,46 @@
 #include <Wire.h>
 #include <Adafruit_Sensor.h>
-#include <Adafruit_BNO055.h>
-#include <ArduinoEigen.h>
-#include <ArduinoEigenDense.h>
+#include <Adafruit_BMP280.h>
 #include "EKF.h"
 
-Adafruit_BNO055 bno = Adafruit_BNO055(55);
+// Create sensor object
+Adafruit_BMP280 bmp;
+
+// Create EKF filter object
 EKF ekf;
+
+// Variables to hold sensor data
+double barometerAltitude;
 
 void setup() {
     Serial.begin(115200);
-    if (!bno.begin()) {
-        Serial.print("No BNO055 detected ... Check your wiring or I2C ADDR!");
+    Wire.begin();
+
+    // Initialize BMP280
+    if (!bmp.begin()) {
+        Serial.println("Could not find a valid BMP280 sensor, check wiring!");
         while (1);
     }
-    delay(1000);
-    bno.setExtCrystalUse(true);
+
+    // Print labels for Serial Plotter
+    Serial.println("Time (s)\tRaw Altitude (m)\tFiltered Altitude (m)");
+
+    // Initialize EKF filter
+    barometerAltitude = bmp.readAltitude(1013.25); // Assuming sea level pressure is 1013.25 hPa
+    ekf.begin(barometerAltitude, 0.0); // Initialize EKF with initial altitude
 }
 
 void loop() {
-    sensors_event_t event;
-    bno.getEvent(&event);
+    // Read barometer altitude
+    barometerAltitude = bmp.readAltitude(1013.25);
 
-    // Get sensor data
-    Vector3d accel(event.acceleration.x, event.acceleration.y, event.acceleration.z);
-    Vector3d mag(event.magnetic.x, event.magnetic.y, event.magnetic.z);
-    Vector3d gyro(event.gyro.x, event.gyro.y, event.gyro.z);
+    // Update EKF filter
+    ekf.update(barometerAltitude, 0.0);
 
-    double dt = 0.01; // Time step, adjust as needed
+    // Print data for Arduino Serial Plotter
+    Serial.print(barometerAltitude);
+    Serial.print("\t");
+    Serial.println(ekf.current_state[0]); // Print filtered altitude
 
-    ekf.predict(gyro, dt);
-    ekf.update(accel, mag);
-
-    Eigen::Vector3d eulerAngles = ekf.getEulerAngles(ekf.getXHat().head<4>());
-
-    Serial.print("Roll: ");
-    Serial.print(eulerAngles(0) * 180 / M_PI);
-    Serial.print(", Pitch: ");
-    Serial.print(eulerAngles(1) * 180 / M_PI);
-    Serial.print(", Yaw: ");
-    Serial.println(eulerAngles(2) * 180 / M_PI);
-
-    delay(10); // Delay to match your time step
+    delay(1000); // Delay for readability
 }

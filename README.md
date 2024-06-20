@@ -32,12 +32,13 @@ The electronics mount CAD design showcases the placement of PCBs within the rock
 
 Credits: Electronics Mount CAD design by Caelan Babenko
 
-# Nosecone (in construction) & Fuselage Housing for the Electronics Mount
+<!-- # Nosecone (in construction) & Fuselage Housing for the Electronics Mount
 <div style="text-align: center;">
   <img src="images/Nosecone_Tube.jpg" alt="Nosecone image" width="100%" style="display: inline-block; margin-right: 10px;">
 </div>
 
 Credits: Nosecone rolled by Sean Hwang, Caelan Babenko, Jordan Birley |  Fuselage Housing CAD design by Caelan Babenko
+-->
 
 # Testing Setup
 Here's an image showing my testing setup for the flight computer(left) and ground station(right):
@@ -161,6 +162,30 @@ The flight computer controls four pyro channels for parachute deployment.
 
 The integration of the Arbalest Flight Computer with the LiPo batteries, screw switch, Runcam Split 4 cameras, and pyro channels provides a robust system for managing various flight operations, including parachute deployment. 
 
+# Connecting Runcam Split 4 Cameras to the Testing Setup
+
+To simulate real-flight conditions and verify the functionality of the Runcam Split 4 cameras, a direct connection to the testing setup is essential. This section outlines the straightforward process of integrating Runcam Split 4 cameras into your testing environment for video recording and analysis.
+
+<div style="text-align: center;">
+  <img src="images/RunCamSplit4_compared_to_palm.jpg" alt="RCS4" width="25%" style="display: inline-block;">
+  <img src="images/RunCamSplit4_isolated.jpg" alt="RCS4" width="33.3%" style="display: inline-block;">
+  <img src="images/runcamsplit4_setup.jpg" alt="RCS4" width="25%" style="display: inline-block;">
+</div>
+
+### Step 1: Gather Necessary Components
+
+Ensure you have the following components ready:
+
+- Runcam Split 4 camera module
+- Teensy 4.1 microcontroller board
+- Jumper wires
+- Soldering equipment
+
+### Step 2: Physical Connection
+
+1. **Connect Power**: Use jumper wires to connect the power source to the Teensy 4.1 for providing power to the entire setup.
+2. **Connect Camera**: Solder jumper wires onto the RX (receive) and TX (transmit) pins of the Runcam Split 4 camera. Then, connect the RX wire to the RX pin and the TX wire to the TX pin on the Teensy 4.1 for video data transmission.
+3. **Ground Connection**: Connect another jumper wire from the ground (GND) pin of the Runcam Split 4 to any ground pin on the Teensy 4.1 to complete the circuit.
 
 # Transceiver Test w/ RC plane
 <div style="text-align: center;">

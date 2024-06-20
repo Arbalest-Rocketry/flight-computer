@@ -8,6 +8,7 @@
 #define WINDOW_SIZE 20
 #define DECREASE_THRESHOLD 5 // Number of consecutive decreases to confirm apogee
 extern bool apogeeReached;
+extern Adafruit_BMP280 bmp; // BMP280 object
 
 typedef struct {
     double *backing_array;

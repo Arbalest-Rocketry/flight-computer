@@ -1,0 +1,9 @@
+After flight computer has turned on wait 10 minutes to turn cameras on
+- detect launch
+- detect 1st stage burn out and deploy deployment pyro charges on first stage
+- after 10 seconds after stage separation light upper stage motor
+- at apogee deploy drogue pyro charges
+- at 500 meters above ground level deploy main parachute pyros
+- if confirmed landed after 40 seconds then:
+        low power Mode = cameras off, turn imu, bno, gps in low power mode, 
+        transmit data every 30 seconds, and write all data from the spi to the sd card

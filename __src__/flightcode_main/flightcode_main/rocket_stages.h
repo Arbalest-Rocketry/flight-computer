@@ -10,6 +10,7 @@ extern const int pyro1Pin;
 extern const int pyro2Pin;
 extern const int pyroDroguePin;
 extern const int pyroMainPin;
+extern bool isLowPowerModeEntered;
 
 // Declare the BNO055 object as external
 extern Adafruit_BNO055 bno;

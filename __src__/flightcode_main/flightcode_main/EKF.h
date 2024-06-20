@@ -1,42 +1,36 @@
-#ifndef EKF_H
-#define EKF_H
-
-#include <ArduinoEigenDense.h>
-#include <cmath>
-
-using namespace Eigen;
+#pragma once
+#include <Arduino.h>
 
 class EKF {
-public:
-    EKF();
-    VectorXd getXHat() const;  // Add this line to declare the getter method.
-    void predict(Vector3d w, double dt);
-    void update(Vector3d a, Vector3d m);
-    Vector3d getEulerAngles(Vector4d q);
-
 private:
-    Matrix3d getRotMat(Vector4d q);
-    Vector4d normalizeQuat(Vector4d q);
-    Vector3d getAccelVector(Vector3d a);
-    Vector3d getMagVector(Vector3d m);
-    MatrixXd getJacobianMatrix(Vector3d reference);
-    VectorXd predictAccelMag();
+    double A[3][3];     // State transition matrix for position
+    double Q[3][3];     // Model noise covariance
+    double H[2][3];     // Measurement jacobian
+    double R[2][2];     // Measurement noise covariance
+    double predicted_state[3];
+    double adjusted_state[3];
+    double current_p_cov[3][3];     // Process covariance
+    double predicted_p_cov[3][3];
+    double adjusted_p_cov[3][3];
+    double EKF_gain[3][2];
 
-    VectorXd xHat;
-    VectorXd xHatBar;
-    VectorXd xHatPrev;
-    Vector3d yHatBar;
-    MatrixXd p;
-    MatrixXd Q;
-    MatrixXd R;
-    MatrixXd K;
-    MatrixXd A;
-    MatrixXd B;
-    MatrixXd C;
-    Vector3d accelReference;
-    Vector3d magReference;
-    Matrix3d mag_Ainv;
-    Vector3d mag_b;
+    unsigned long old_time;
+    unsigned long curr_time;
+    double dt;
+
+    // EKF filter functions
+    void predict_state();
+    void predict_p_cov();
+    void update_gain();
+    void adjust_p_cov();
+    void adjust_state();
+    void init();
+
+public:
+    double measurement[2];
+    double current_state[3];
+
+    EKF();   // Constructor
+    void update(double barometerAltitude, double accelZ);   // Main EKF filter caller
+    void begin(double initialBarometerAltitude, double initialAccelZ);
 };
-
-#endif /* EKF_H */

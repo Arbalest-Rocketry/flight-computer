@@ -10,8 +10,6 @@
 #include <iostream>
 #include <cmath>
 #include <cstring>
-#include <ArduinoEigen.h>
-#include <ArduinoEigenDense.h>
 #include "EKF.h" 
 #include "apogee.h"
 #include "rocket_stages.h" 
@@ -244,47 +242,30 @@ void setup() {
 
     // Initialize apogee detector
     init_apogee_detector(&detector, altitude_backing_array, WINDOW_SIZE);
+    
+    // Initialize EKF
+    ekf.begin(bmp.readAltitude(1013.25), 0);  // Initial altitude and acceleration (set to 0)
 }
 
 void loop() {
-  
     double current_altitude = bmp.readAltitude(1013.25); // Assuming sea level pressure
+    sensors_event_t event;
+    bno.getEvent(&event);
+    double current_accelZ = event.acceleration.z;  // Read the acceleration in Z-axis
+    
+    ekf.update(current_altitude, current_accelZ);  // Update the EKF with new sensor data
+
     update_apogee_detector(&detector, current_altitude);
     
     if (is_apogee_reached(&detector) && !apogeeReached) {
         apogeeReached = true;
         // Additional logic for apogee event
     }
+    
     delay(100); // Adjust delay as needed
-    /*
-    sensors_event_t event;
-    bno.getEvent(&event);
 
-    // Get sensor data
-    Vector3d accel(event.acceleration.x, event.acceleration.y, event.acceleration.z);
-    Vector3d mag(event.magnetic.x, event.magnetic.y, event.magnetic.z);
-    Vector3d gyro(event.gyro.x, event.gyro.y, event.gyro.z);
-
-    double dt = 0.01; // Time step, adjust as needed
-
-    ekf.predict(gyro, dt);
-    ekf.update(accel, mag);
-
-    Eigen::Vector3d eulerAngles = ekf.getEulerAngles(ekf.getXHat().head<4>());
-
-    Serial.print("Roll: ");
-    Serial.print(eulerAngles(0) * 180 / M_PI);
-    Serial.print(", Pitch: ");
-    Serial.print(eulerAngles(1) * 180 / M_PI);
-    Serial.print(", Yaw: ");
-    Serial.println(eulerAngles(2) * 180 / M_PI);
-    */
-
- /*/////////////////////////////////////////////////*/  
-          /* TODO: Add Rocket Stages Logic */
- /*/////////////////////////////////////////////////*/ 
- 
-if (!launchDetected) {
+    // Rocket stages logic
+    if (!launchDetected) {
         launchDetected = detectLaunch(bmp);
     } else if (!firstStageBurnoutDetected) {
         firstStageBurnoutDetected = detectFirstStageBurnout(bmp);
@@ -303,38 +284,8 @@ if (!launchDetected) {
     }
 
     delay(100); // I am delaying to prevent excess polling
-    
-    /*
-    // Read orientation from BNO055 sensor
-    imu::Vector<3> euler = bno.getVector(Adafruit_BNO055::VECTOR_EULER);
-    float yaw = euler.x();
-    float pitch = euler.y();
-    float roll = euler.z();
-    
-    // Convert Euler angles to quaternion
-    float qr, qi, qj, qk;
-    eulerToQuaternion(yaw, pitch, roll, &qr, &qi, &qj, &qk);
-    
-    // Normalize the quaternion
-    float quat[4] = {qr, qi, qj, qk};
-    normalizeQuat(quat);
-    
-    // Display quaternion
-    Serial.print("Quaternion: ");
-    Serial.print(quat[0], 4);
-    Serial.print(", ");
-    Serial.print(quat[1], 4);
-    Serial.print(", ");
-    Serial.print(quat[2], 4);
-    Serial.print(", ");
-    Serial.println(quat[3], 4);
-    */
 
-    // Check for low power mode
-    if(!isLowPowerModeEntered){
-        logData();
-        transmitData();
-        //handleCameraErrors(); // Check for camera errors
-        delay(100);
-    }
+    // Log and transmit data
+    logData();
+    transmitData();
 }

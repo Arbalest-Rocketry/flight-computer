@@ -48,11 +48,6 @@ Here's an image showing my testing setup for the flight computer(left) and groun
   <img src="images/test_setup_2.jpg" alt="Testing Setup" width="45%" style="display: inline-block;">
 </div>
 
-## On one board 
-<div style="text-align: center;">
-  <img src="images/onebreadboard.jpg" alt="Testing Setup" width="100%" style="display: inline-block;">
-</div>
-
 # PCBv1.0 Schematics
 Pictures showing our current **Arbalest Flight Computer** schematics layout
 <div style="text-align: center;">

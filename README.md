@@ -188,14 +188,6 @@ Ensure you have the following components ready:
 2. **Connect Camera**: Solder jumper wires onto the RX (receive) and TX (transmit) pins of the Runcam Split 4 camera. Then, connect the RX wire to the RX pin and the TX wire to the TX pin on the Teensy 4.1 for video data transmission.
 3. **Ground Connection**: Connect another jumper wire from the ground (GND) pin of the Runcam Split 4 to any ground pin on the Teensy 4.1 to complete the circuit.
 
-# Transceiver Test w/ RC plane
-<div style="text-align: center;">
-  <img src="images/IMG_4160.jpg" alt="RC Plane w/ Flight Computer on board" width="40%" style="display: inline-block;">
-  <img src="images/IMG_4163.jpg" alt="RC Plane w/ Flight Computer on board" width="50%" style="display: inline-block;">
-  <img src="images/IMG_4161.jpg" alt="RC Plane w/ Flight Computer on board" width="40%" style="display: inline-block;">
-  <img src="images/IMG_4162.jpg" alt="RC Plane w/ Flight Computer on board" width="40%" style="display: inline-block;">
-</div>
-
 # To Infinity and Beyond
 <div style="text-align: center;">
   <img src="images/LC2022.png" alt="LC 2022 logo" width="42%" style="display: inline-block;">

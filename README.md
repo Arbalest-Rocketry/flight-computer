@@ -25,12 +25,12 @@ This repository contains the code and documentation for the flight computer used
 The electronics mount CAD design showcases the placement of PCBs within the rocket's fuselage. This design ensures proper integration and protection of the flight computer and associated components.
 
 <div style="text-align: center;">
-  <img src="images/electronics_mount_cad.png" alt="Electronics Mount CAD Design" width="100%" style="display: inline-block; margin-right: 10px;">
-  <img src="images/electronics_mount_cad_2.png" alt="Electronics Mount CAD Design" width="100%" style="display: inline-block;">
-  <img src="images/electronics_mount_cad_3.png" alt="Electronics Mount CAD Design" width="100%" style="display: inline-block;">
+  <img src="images/electronics_mount_cad.png" alt="Electronics Mount CAD Design" width="33%" style="display: inline-block; margin-right: 10px;">
+  <img src="images/electronics_mount_cad_2.png" alt="Electronics Mount CAD Design" width="33%" style="display: inline-block;">
+  <img src="images/electronics_mount_cad_3.png" alt="Electronics Mount CAD Design" width="33%" style="display: inline-block;">
 </div>
 
-Credits: Electronics Mount CAD design by Caelan Babenko
+Credits: Electronics Mount CAD design by _**Caelan Babenko**_
 
 <!-- # Nosecone (in construction) & Fuselage Housing for the Electronics Mount
 <div style="text-align: center;">
@@ -58,7 +58,8 @@ Pictures showing our current **Arbalest Flight Computer** schematics layout
   <img src="images/PCB_Layout_Frontal.png" alt="PCB 3D Front" width="32%" style="display: inline-block;">
   <img src="images/PCB_Layout_Rear.png" alt="PCB 3D Rear" width="32%" style="display: inline-block;">
 </div>
-Credits: PCB Design done by Baseer Yousufzai.
+
+Credits: PCB Design done by _**Baseer Yousufzai**_
 
 # IRLv1.0
 <div style="text-align: center;">

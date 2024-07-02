@@ -53,7 +53,7 @@ Here's an image showing my testing setup for the flight computer(left) and groun
   <img src="images/onebreadboard.jpg" alt="Testing Setup" width="100%" style="display: inline-block;">
 </div>
 
-# PCB Schematics
+# PCBv1.0 Schematics
 Pictures showing our current **Arbalest Flight Computer** schematics layout
 <div style="text-align: center;">
   <img src="images/flightcomputer_sch.png" alt="Arbalest Flight Computer Demo" width="100%" style="display: inline-block;">
@@ -64,6 +64,12 @@ Pictures showing our current **Arbalest Flight Computer** schematics layout
   <img src="images/PCB_Layout_Rear.png" alt="PCB 3D Rear" width="32%" style="display: inline-block;">
 </div>
 Credits: PCB Design done by Baseer Yousufzai.
+
+# IRLv1.0
+<div style="text-align: center;">
+  <img src="images/gems/Leroy_holds_pcb_1.jpg" alt="PCB IRL Front" width="47%" style="display: inline-block;">
+  <img src="images/gems/Leroy_holds_pcb_2.png" alt="PCB IRL Front" width="47%" style="display: inline-block;">
+</div>
 
 # How it works 
 Simple Illustration 

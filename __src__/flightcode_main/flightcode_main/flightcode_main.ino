@@ -13,11 +13,12 @@
 #include "EKF.h" 
 #include "apogee.h"
 #include "rocket_stages.h" 
+#include "songs.h"
 
 EKF ekf;
 double altitude_backing_array[WINDOW_SIZE]; // Array to store altitude data for the rolling window
 ApogeeDetector detector; // Apogee detector object
-
+#define BUZZER_PIN 3
 const int sdCardPin = 10;
 
 // LoRa settings
@@ -33,6 +34,7 @@ bool mainChuteDeployed = false;
 bool launchDetected = false;
 bool firstStageBurnoutDetected = false;
 bool isLanded = false;
+bool melodyPlayed = false; // Flag to check if the melody has been played
 // ----------------------------------------- //
 
 // Function to convert Euler angles to quaternions
@@ -191,7 +193,8 @@ void setup() {
     pinMode(pyroDroguePin, OUTPUT);
     pinMode(pyroMainPin, OUTPUT);
     pinMode(13, OUTPUT);   // Set pin 13 as output for the LED
-    
+    pinMode(BUZZER_PIN, OUTPUT); // Set pin for buzzer
+
     // Check if camera communication ports are initialized
     /* if (!Serial1) {
         Serial.println("Error: One or more camera communication ports not initialized.");
@@ -203,7 +206,6 @@ void setup() {
         while (1);
     } Serial.println("BMP280 initialized!");
     
-
     if (!bno.begin()) {
         Serial.println("No BNO055 detected, check wiring!");
         while (1);
@@ -232,12 +234,10 @@ void setup() {
     rf95.setFrequency(RF95_FREQ);
     rf95.setTxPower(23, false);
     
-    startRec();
-
     // Wait for flight computer to turn on (10 minutes)
     // delay(600000); // 600000 milliseconds = 10 minutes
     // TODO: Find a way to delay cam from turning on for 10 minutes.
-    delay(100000);
+    // delay(100000);
     // startRec();
 
     // Initialize apogee detector
@@ -248,6 +248,8 @@ void setup() {
 }
 
 void loop() {
+    if (!melodyPlayed) {  whatisthatmelody(); melodyPlayed = true; /*Set the flag to true after playing the melody*/  }
+
     double current_altitude = bmp.readAltitude(1013.25); // Assuming sea level pressure
     sensors_event_t event;
     bno.getEvent(&event);

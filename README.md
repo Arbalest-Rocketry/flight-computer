@@ -1,13 +1,9 @@
-# The Arbalest Flight Computer for our 2 Stage High Power Rocket set to launch at Launch Canada 2024 
+# The Arbalest Flight Computer Software by `Leroy Musa`
 
-This repository contains the code and documentation for the flight computer used in our 2 stage rocket project.
+This repository contains the code and documentation for the flight computer used for our 2 Stage High Power Rocket set to launch at Launch Canada 2024 
 
-# Components
+## Components
 - Microcontroller: [Teensy 4.1](https://www.pjrc.com/store/teensy41.html)
-  <div style="text-align: center;">
-  <img src="images/Teensy4.1_layout.png" alt="Image showing me holding our COTS Flight Computer" width="100%" style="display: inline-block; margin-right: 10px;">
-</div>
-
 - Sensors:
   - Altimeter: [Adafruit BMP280](https://www.adafruit.com/product/2651)
   - IMU (Inertial Measurement Unit): [Adafruit BNO055](https://www.adafruit.com/product/4646)
@@ -21,7 +17,7 @@ This repository contains the code and documentation for the flight computer used
   <img src="images/featherweight_alt_gps.png" alt="Electronics Mount CAD Design" width="60%" style="display: inline-block;">
 </div>
 
-# Electronics Mount CAD Design
+## Electronics Mount CAD Design by `Caelan Babenko`
 The electronics mount CAD design showcases the placement of PCBs within the rocket's fuselage. This design ensures proper integration and protection of the flight computer and associated components.
 
 <div style="text-align: center;">
@@ -30,17 +26,7 @@ The electronics mount CAD design showcases the placement of PCBs within the rock
   <img src="images/electronics_mount_cad_3.png" alt="Electronics Mount CAD Design" width="100%" style="display: inline-block;">
 </div>
 
-Credits: Electronics Mount CAD design by `Caelan Babenko`
-
-<!-- # Nosecone (in construction) & Fuselage Housing for the Electronics Mount
-<div style="text-align: center;">
-  <img src="images/Nosecone_Tube.jpg" alt="Nosecone image" width="100%" style="display: inline-block; margin-right: 10px;">
-</div>
-
-Credits: Nosecone rolled by Sean Hwang, Caelan Babenko, Jordan Birley |  Fuselage Housing CAD design by Caelan Babenko
--->
-
-# Testing Setup
+## Testing Setup
 Here's an image showing my testing setup for the flight computer(left) and ground station(right):
 
 <div style="text-align: center;">
@@ -48,7 +34,7 @@ Here's an image showing my testing setup for the flight computer(left) and groun
   <img src="images/test_setup_2.jpg" alt="Testing Setup" width="45%" style="display: inline-block;">
 </div>
 
-# PCBv1.0 Schematics
+## PCBv1.0 Schematics by `Baseer Yousufzai`
 Pictures showing our current **Arbalest Flight Computer** schematics layout
 <div style="text-align: center;">
   <img src="images/flightcomputer_sch.png" alt="Arbalest Flight Computer Demo" width="100%" style="display: inline-block;">
@@ -59,15 +45,13 @@ Pictures showing our current **Arbalest Flight Computer** schematics layout
   <img src="images/PCB_Layout_Rear.png" alt="PCB 3D Rear" width="32%" style="display: inline-block;">
 </div>
 
-Credits: PCB Design done by `Baseer Yousufzai`
-
-# IRLv1.0
+## IRLv1.0
 <div style="text-align: center;">
   <img src="images/gems/Leroy_holds_pcb_1.jpg" alt="PCB IRL Front" width="47%" style="display: inline-block;">
   <img src="images/gems/Leroy_holds_pcb_2.png" alt="PCB IRL Front" width="47%" style="display: inline-block;">
 </div>
 
-# How it works 
+## How it works 
 Simple Illustration 
 <div style="text-align: center;">
   <img src="images/fc_illustration.png" alt="Flight Computer Illustration" width="100%" style="display: inline-block;">
@@ -95,7 +79,7 @@ The wiring diagram consists of the following connections:
 - Camera connections
 - Pyro channel connections for parachute deployment
 
-## Power Supply
+### Power Supply
 
 The power supply section is crucial for powering the flight computer and the connected components.
 
@@ -115,50 +99,14 @@ The power supply section is crucial for powering the flight computer and the con
    - The positive wire from the battery pack connects to one terminal of the screw switch.
    - The other terminal of the screw switch connects to the power input of the Arbalest Flight Computer.
 
-## Camera Connections
 
-Three Runcam Split 4 cameras are connected to the flight computer for capturing video during flight.
-
-1. **Power Supply:**
-   - The positive and ground wires from the battery pack are connected to the power inputs of each Runcam Split 4 PCB.
-   - This ensures that all cameras receive a stable 7.4V power supply.
-
-2. **Video Signal:**
-   - Each Runcam Split 4 camera is connected to its respective video input on the Arbalest Flight Computer.
-   - This allows the flight computer to manage and record video from multiple angles.
-
-## Pyro Channels for Parachute Deployment
+### Pyro Channels for Parachute Deployment
 
 The flight computer controls four pyro channels for parachute deployment.
 
 1. **Connections:**
    - Each pyro channel (1 to 4) has two wires: one connected to the flight computer and the other to the pyro device.
    - The flight computer sends a signal through these wires to activate the pyrotechnic devices.
-
-## Detailed Steps for Assembly
-
-1. **Battery Pack Assembly:**
-   - Connect the four LiPo batteries as per the series-parallel configuration.
-   - Secure the connections with soldering and insulation to prevent short circuits.
-
-2. **Switch Installation:**
-   - Mount the screw switch in a convenient location on the flight system.
-   - Connect the positive wire from the battery pack to one terminal of the screw switch.
-   - Connect another wire from the screw switch to the power input of the flight computer.
-
-3. **Camera Setup:**
-   - Install the Runcam Split 4 cameras in their designated positions.
-   - Connect the power wires from the battery pack to each camera's PCB.
-   - Connect the video output from each camera to the flight computer.
-
-4. **Pyro Channel Wiring:**
-   - Connect the wires from each pyro channel on the flight computer to the corresponding pyrotechnic devices for parachute deployment.
-   - Ensure that the connections are secure and insulated.
-
-5. **Final Checks:**
-   - Verify all connections for proper polarity and secure attachment.
-   - Check the power supply voltage and ensure that the system is receiving the correct voltage.
-   - Test the screw switch functionality to ensure it correctly controls the power to the flight computer.
 
 ## Conclusion
 
@@ -191,10 +139,9 @@ Ensure you have the following components ready:
 
 # Transceiver Test w/ RC plane
 <div style="text-align: center;">
-  <img src="images/IMG_4160.jpg" alt="RC Plane w/ Flight Computer on board" width="40%" style="display: inline-block;">
-  <img src="images/IMG_4163.jpg" alt="RC Plane w/ Flight Computer on board" width="50%" style="display: inline-block;">
-  <img src="images/IMG_4161.jpg" alt="RC Plane w/ Flight Computer on board" width="40%" style="display: inline-block;">
-  <img src="images/IMG_4162.jpg" alt="RC Plane w/ Flight Computer on board" width="40%" style="display: inline-block;">
+  <img src="images/IMG_4160.jpg" alt="RC Plane w/ Flight Computer on board" width="30%" style="display: inline-block;">
+  <img src="images/IMG_4161.jpg" alt="RC Plane w/ Flight Computer on board" width="30%" style="display: inline-block;">
+  <img src="images/IMG_4162.jpg" alt="RC Plane w/ Flight Computer on board" width="30%" style="display: inline-block;">
 </div>
 
 # To Infinity and Beyond

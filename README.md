@@ -36,8 +36,19 @@ Here's an image showing my testing setup for the flight computer(left) and groun
   <img src="images/test_setup_2.jpg" alt="Testing Setup" width="45%" style="display: inline-block;">
 </div>
 
-## PCBv1.0 Schematics by `Baseer Yousufzai`
+## PCBv2.0 Schematics by `Baseer Yousufzai`
 Pictures showing our current **Arbalest Flight Computer** schematics layout
+<div style="text-align: center;">
+  <img src="images/FlightComputer_sch.png" alt="Arbalest Flight Computer Demo" width="100%" style="display: inline-block;">
+</div>
+<div style="text-align: center;">
+  <img src="images/PCBv2.0_Gerber.png" alt="PCB Gerber" width="32%" style="display: inline-block;">
+  <img src="images/PCB_front.png" alt="PCB 3D Front" width="32%" style="display: inline-block;">
+  <img src="images/PCB_back.png" alt="PCB 3D Rear" width="32%" style="display: inline-block;">
+</div>
+
+## PCBv1.0 Schematics by `Baseer Yousufzai`
+Pictures showing v1.0 of our **Arbalest Flight Computer** schematics layout
 <div style="text-align: center;">
   <img src="images/flightcomputer_sch.png" alt="Arbalest Flight Computer Demo" width="100%" style="display: inline-block;">
 </div>

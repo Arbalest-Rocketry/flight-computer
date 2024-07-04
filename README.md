@@ -13,10 +13,10 @@ This repository contains the code and documentation for the flight computer used
 (left)
 - Our COTS GPS: [Featherweight GPS Tracker](https://www.featherweightaltimeters.com/featherweight-gps-tracker.html) (right)
 <div style="text-align: center;">
-  <img src="images/cots.jpg" alt="Image showing me holding our COTS Flight Computer" width="30%" style="display: inline-block; margin-right: 10px;">
-  <img src="images/featherweight_alt_gps.png" alt="Electronics Mount CAD Design" width="60%" style="display: inline-block;">
-  <img src="images/Featherweight GS v2 opened.jpg" alt="Electronics Mount CAD Design" width="45%" style="display: inline-block;">
-  <img src="images/Featherweight v2 with tracker.jpg" alt="Electronics Mount CAD Design" width="26%" style="display: inline-block;">
+  <img src="images/cots.jpg" alt="Image showing me holding our COTS Flight Computer" width="20%" style="display: inline-block; margin-right: 10px;">
+  <img src="images/Featherweight GS v2 opened.jpg" alt="Electronics Mount CAD Design" width="35%" style="display: inline-block;">
+  <img src="images/Featherweight v2 with tracker.jpg" alt="Electronics Mount CAD Design" width="20%" style="display: inline-block;">
+  <img src="images/featherweight_alt_gps.png" alt="Electronics Mount CAD Design" width="80%" style="display: inline-block;">
 </div>
 
 ## Electronics Mount CAD Design by `Caelan Babenko`

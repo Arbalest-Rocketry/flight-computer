@@ -20,7 +20,7 @@ This repository contains the code and documentation for the flight computer used
 </div>
 
 ## Electronics Mount CAD Design by `Caelan Babenko`
-The electronics mount CAD design showcases the placement of PCBs within the rocket's fuselage. This design ensures proper integration and protection of the flight computer and associated components.
+The electronics mount CAD design showcases the placement of PCBs within the rocket's fuselage. This design ensures the flight computer's and associated components' proper integration and protection.
 
 <div style="text-align: center;">
   <img src="images/electronics_mount_cad.png" alt="Electronics Mount CAD Design" width="100%" style="display: inline-block; margin-right: 10px;">
@@ -42,10 +42,13 @@ Pictures showing our current **Arbalest Flight Computer** schematics layout
   <img src="images/FlightComputer_sch.png" alt="Arbalest Flight Computer Demo" width="100%" style="display: inline-block;">
 </div>
 <div style="text-align: center;">
-  <img src="images/PCBv2.0_Gerber.png" alt="PCB Gerber" width="32%" style="display: inline-block;">
-  <img src="images/PCB_front.png" alt="PCB 3D Front" width="32%" style="display: inline-block;">
-  <img src="images/PCB_back.png" alt="PCB 3D Rear" width="32%" style="display: inline-block;">
+  <img src="images/PCBv2.0_Gerber.png" alt="PCB Gerber" width="30%" style="display: inline-block;">
+  <img src="images/PCB_front.png" alt="PCB 3D Front" width="33%" style="display: inline-block;">
+  <img src="images/PCB_back.png" alt="PCB 3D Rear" width="34%" style="display: inline-block;">
 </div>
+
+## IRLv2.0
+<div style="text-align: center;"></div>
 
 ## PCBv1.0 Schematics by `Baseer Yousufzai`
 Pictures showing v1.0 of our **Arbalest Flight Computer** schematics layout
@@ -74,7 +77,7 @@ Simple Illustration
 
 ### Overview
 
-This document provides a detailed description of the Arbalest Flight Computer setup as depicted in the provided schematic. The system integrates four 3.7V 650mAh LiPo batteries, a screw switch, and three Runcam Split 4 cameras connected to the Arbalest Flight Computer. The flight computer controls four pyro channels specifically designed for parachute deployment.
+This document provides a detailed description of the Arbalest Flight Computer setup as depicted in the schematic. The system integrates four 3.7V 650mAh LiPo batteries, a screw switch, and three Runcam Split 4 cameras connected to the Arbalest Flight Computer. The flight computer controls four pyro channels specifically designed for parachute deployment.
 
 ### Components
 
@@ -88,7 +91,7 @@ This document provides a detailed description of the Arbalest Flight Computer se
 
 The wiring diagram consists of the following connections:
 - Power supply wiring from the batteries
-- Activation switch wiring
+- Activation of switch wiring
 - Camera connections
 - Pyro channel connections for parachute deployment
 
@@ -97,7 +100,7 @@ The wiring diagram consists of the following connections:
 The power supply section is crucial for powering the flight computer and the connected components.
 
 1. **LiPo Batteries:**
-   - Four 3.7V 650mAh LiPo batteries are wired in series-parallel to form a 7.4V 1950mAh power pack.
+   - Four 3.7V 650mAh LiPo batteries are wired in series parallel to form a 7.4V 1950mAh power pack.
    - **Series Connection:** Two pairs of two batteries connected in series, resulting in two 7.4V packs.
    - **Parallel Connection:** These two 7.4V packs are connected in parallel to increase the capacity to 1950mAh.
 
@@ -119,7 +122,7 @@ The flight computer controls four pyro channels for parachute deployment.
 
 1. **Connections:**
    - Each pyro channel (1 to 4) has two wires: one connected to the flight computer and the other to the pyro device.
-   - The flight computer sends a signal through these wires to activate the pyrotechnic devices.
+   - The flight computer sends a signal to activate the pyrotechnic devices through these wires.
 
 ## Conclusion
 
@@ -146,9 +149,9 @@ Ensure you have the following components ready:
 
 ### Step 2: Physical Connection
 
-1. **Connect Power**: Use jumper wires to connect the power source to the Teensy 4.1 for providing power to the entire setup.
-2. **Connect Camera**: Solder jumper wires onto the RX (receive) and TX (transmit) pins of the Runcam Split 4 camera. Then, connect the RX wire to the RX pin and the TX wire to the TX pin on the Teensy 4.1 for video data transmission.
-3. **Ground Connection**: Connect another jumper wire from the ground (GND) pin of the Runcam Split 4 to any ground pin on the Teensy 4.1 to complete the circuit.
+1. **Connect Power**: Use jumper wires to connect the power source to the Teensy 4.1 to provide power to the entire setup.
+2. **Connect Camera**: Solder jumper wires onto the RX (receive) and TX (transmit) pins of the Runcam Split 4 camera. Then, you can connect the RX wire to the RX pin and the TX wire to the TX pin on the Teensy 4.1 for video data transmission.
+3. **Ground Connection**: Connect another jumper wire from the ground (GND) pin of the Runcam Split 4 to any ground pin on Teensy 4.1 to complete the circuit.
 
 # Transceiver Test w/ RC plane
 <div style="text-align: center;">

@@ -1,3 +1,7 @@
+//=======================================================================================================//    
+//=============================           EXTENDED KALMAN FILTER            =============================//
+//=======================================================================================================//
+
 #include "EKF.h"
 
 EKF::EKF() {
@@ -20,14 +24,14 @@ void EKF::init() {
     current_p_cov[2][0] = 0; current_p_cov[2][1] = 0; current_p_cov[2][2] = 1;
 }
 
-void EKF::begin(double initialBarometerAltitude, double initialAccelZ) {
+void EKF::begin(double initialBarometerAltitude, double initialaccelY) {
     old_time = millis();
     current_state[0] = initialBarometerAltitude; // Altitude
     current_state[1] = 0; // Velocity
-    current_state[2] = initialAccelZ; // Acceleration
+    current_state[2] = initialaccelY; // Acceleration
 }
 
-void EKF::update(double barometerAltitude, double accelZ) {
+void EKF::update(double barometerAltitude, double accelY) {
     curr_time = millis();
     dt = ((double)(curr_time - old_time) / 1000);
     old_time = curr_time;
@@ -37,7 +41,7 @@ void EKF::update(double barometerAltitude, double accelZ) {
     A[2][0] = 0; A[2][1] = 0; A[2][2] = 1;
 
     measurement[0] = barometerAltitude;
-    measurement[1] = accelZ;
+    measurement[1] = accelY;
 
     predict_state();
     predict_p_cov();
@@ -146,4 +150,12 @@ void EKF::adjust_p_cov() {
     adjusted_p_cov[2][0] = predicted_p_cov[2][0] - ((EKF_gain[2][0] * B[0][0]) + (EKF_gain[2][1] * B[1][0]));
     adjusted_p_cov[2][1] = predicted_p_cov[2][1] - ((EKF_gain[2][0] * B[0][1]) + (EKF_gain[2][1] * B[1][1]));
     adjusted_p_cov[2][2] = predicted_p_cov[2][2] - ((EKF_gain[2][0] * B[0][2]) + (EKF_gain[2][1] * B[1][2]));
+}
+
+double EKF::getFilteredAltitude() {
+    return current_state[0]; // Altitude
+}
+
+double EKF::Ay_filtered() {
+    return current_state[2]; // Ay
 }

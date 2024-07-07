@@ -1,3 +1,24 @@
+/* Arbalest Rocketry
+    Version 1.00
+    July, 7th 2024 
+    Author: Leroy Musa  */
+
+// State Machine
+enum state {
+
+    PRE_FLIGHT,
+    LAUNCH_DETECTION,
+    FIRST_STAGE_BURNOUT,
+    PREPARE_SECOND_STAGE,
+    SECOND_STAGE_BURNOUT,
+    APOGEE_DETECTION,
+    MAIN_CHUTE_DEPLOYMENT,
+    LANDING_CONFIRMATION,
+    POST_FLIGHT
+
+};
+
+// Libraries
 #include <SPI.h>
 #include <SD.h>
 #include <Wire.h>
@@ -10,18 +31,32 @@
 #include <iostream>
 #include <cmath>
 #include <cstring>
+#include <utility/imumaths.h>
+#include <TimeLib.h> 
 #include "EKF.h" 
 #include "apogee.h"
 #include "rocket_stages.h" 
 #include "songs.h"
+#include "runcamsplits.h"
+#include "quaternion.h"
 
+//Kalman filter object
 EKF ekf;
 double altitude_backing_array[WINDOW_SIZE]; // Array to store altitude data for the rolling window
 ApogeeDetector detector; // Apogee detector object
-#define BUZZER_PIN 3
-const int sdCardPin = 10;
 
-// LoRa settings
+//LEDs and Buzzer
+const int ledblu = 7, ledgrn = 4, ledred = 0, teensyled = 13;
+
+//SD CARD(S) CS
+const int chipSelect = BUILTIN_SDCARD;
+const int sdCardPin = 10;
+unsigned long launchTime = 0;
+Quaternion q;
+imu::Vector<3> accel = bno.getVector(Adafruit_BNO055::VECTOR_ACCELEROMETER);
+imu::Vector<3> euler = bno.getVector(Adafruit_BNO055::VECTOR_EULER);
+
+//LoRa settings
 #define RFM95_CS 1
 #define RFM95_RST 34
 #define RFM95_INT 8
@@ -29,178 +64,143 @@ const int sdCardPin = 10;
 
 RH_RF95 rf95(RFM95_CS, RFM95_INT);  // Declare the rf95 object
 
-// ------------------------- FLAGS --------- //
+//===================================================//    
+//==============         FLAGS        ===============//
+//===================================================//
 bool mainChuteDeployed = false;
 bool launchDetected = false;
 bool firstStageBurnoutDetected = false;
 bool isLanded = false;
-bool melodyPlayed = false; // Flag to check if the melody has been played
-// ----------------------------------------- //
-
-// Function to convert Euler angles to quaternions
-void eulerToQuaternion(float yaw, float pitch, float roll, float* qr, float* qi, float* qj, float* qk) {
-    float cy = cos(yaw * 0.5);
-    float sy = sin(yaw * 0.5);
-    float cp = cos(pitch * 0.5);
-    float sp = sin(pitch * 0.5);
-    float cr = cos(roll * 0.5);
-    float sr = sin(roll * 0.5);
-
-    *qr = cy * cp * cr + sy * sp * sr;
-    *qi = cy * cp * sr - sy * sp * cr;
-    *qj = sy * cp * sr + cy * sp * cr;
-    *qk = sy * cp * cr - cy * sp * sr;
-}
-
-// CRC-8 calculation using polynomial 0xD5
-byte calculateCRC(byte *data, byte len) {
-    byte crc = 0;
-    for (byte i = 0; i < len; i++) {
-        crc ^= data[i];
-        for (byte j = 0; j < 8; j++) {
-            if (crc & 0x80)
-                crc = (crc << 1) ^ 0xD5;  // Polynomial for DVB-S2 CRC-8
-            else
-                crc <<= 1;
-        }
-    }
-    return crc;
-}
-
-/* --------------------------------------------------------------------------------------------------------------
-void turnOnCam() {
-  byte turnOnCommand[] = {0xCC, 0x01}; // Command to simulate power button press to turn on the camera
-  byte turnOnCRC = calculateCRC(turnOnCommand, sizeof(turnOnCommand));
-  Serial1.write(turnOnCommand, sizeof(turnOnCommand));
-  Serial1.write(turnOnCRC);
-  Serial.println("Camera turned on.");
-}
- Turn on wouldn't be needed since RunCam turns on as flight computer does, so only turning off will suffice.
--------------------------------------------------------------------------------------------------------------- */
-
-void startRec() {
-  byte startCommand[] = {0xCC, 0x03}; // Command byte for starting recording
-  byte startCRC = calculateCRC(startCommand, sizeof(startCommand));
-  Serial1.write(startCommand, sizeof(startCommand));
-  Serial1.write(startCRC);
-  digitalWrite(13, HIGH); // Turn on LED to indicate recording has started
-  Serial.println("Recording started.");
-}
-
-void stopRec() {
-  byte stopCommand[] = {0xCC, 0x04}; // Command byte for stopping recording
-  byte stopCRC = calculateCRC(stopCommand, sizeof(stopCommand));
-  Serial1.write(stopCommand, sizeof(stopCommand));
-  Serial1.write(stopCRC);
-  digitalWrite(13, LOW); // Turn off LED after recording stops
-  Serial.println("Recording stopped.");
-}
-
-// TODO: Implement this in such a way it simulates a "long press" as that is how the cam is truned on/off
-void turnOffCam() {
-  byte turnOffCommand[] = {0xCC, 0x01}; // Command to simulate power button press (like a click - this would not suffice!) to turn off the camera
-  byte turnOffCRC = calculateCRC(turnOffCommand, sizeof(turnOffCommand));
-  Serial1.write(turnOffCommand, sizeof(turnOffCommand));
-  Serial1.write(turnOffCRC);
-  digitalWrite(13, HIGH); // Turn on LED after cam turns off
-  Serial.println("Camera turned off.");
-}
-
-
-void logData() {
-    File dataFile = SD.open("datalog.txt", FILE_WRITE);
-    if (dataFile) {
-        sensors_event_t event;
-        bno.getEvent(&event);
-        float yaw = event.orientation.x;
-        float pitch = event.orientation.y;
-        float roll = event.orientation.z;
-        float qr, qi, qj, qk;
-        eulerToQuaternion(yaw, pitch, roll, &qr, &qi, &qj, &qk);
-        float temperature = bmp.readTemperature();
-        double altitude = bmp.readAltitude(1013.25);
-        float pressure = bmp.readPressure();
-
-        dataFile.print(millis());
-        dataFile.print(",");
-        dataFile.print(temperature);
-        dataFile.print(",");
-        dataFile.print(pressure);
-        dataFile.print(",");
-        dataFile.print(altitude, 2); // Print altitude with 2 decimal places
-        dataFile.print(",");
-        dataFile.print(qr, 2);
-        dataFile.print(",");
-        dataFile.print(qi, 2);
-        dataFile.print(",");
-        dataFile.print(qj, 2);
-        dataFile.print(",");
-        dataFile.print(qk, 2);
-        dataFile.println();
-        dataFile.close();
-    } else {
-        Serial.println("Error opening datalog.txt");
-    }
-}
-
-void transmitData() {
-    Serial.println("Transmitting data ...");
-    DynamicJsonDocument doc(256);
-    sensors_event_t event;
-    bno.getEvent(&event);
-
-    float yaw = event.orientation.x;
-    float pitch = event.orientation.y;
-    float roll = event.orientation.z;
-    float qr, qi, qj, qk;
-    eulerToQuaternion(yaw, pitch, roll, &qr, &qi, &qj, &qk);
-    float temperature = bmp.readTemperature();
-    double altitude = bmp.readAltitude(1013.25);
-    float pressure = bmp.readPressure();
-
-    char tempStr[8], altStr[8], pressStr[8], qrStr[8], qiStr[8], qjStr[8], qkStr[8];
-    dtostrf(temperature, 5, 2, tempStr);
-    dtostrf(altitude, 5, 2, altStr);
-    dtostrf(pressure, 5, 2, pressStr);
-    dtostrf(qr, 5, 2, qrStr);
-    dtostrf(qi, 5, 2, qiStr);
-    dtostrf(qj, 5, 2, qjStr);
-    dtostrf(qk, 5, 2, qkStr);
-
-    doc["temperature"] = tempStr;
-    doc["pressure"] = pressStr;
-    doc["altitude"] = altStr;
-    doc["qr"] = qrStr;
-    doc["qi"] = qiStr;
-    doc["qj"] = qjStr;
-    doc["qk"] = qkStr;
-
-    char jsonBuffer[256];
-    serializeJson(doc, jsonBuffer);
-    rf95.send((uint8_t *)jsonBuffer, strlen(jsonBuffer));
-    rf95.waitPacketSent();
-}
+bool melodyPlayed1 = false, melodyPlayed2=false; // Flag to check if the melody has been played
 
 void setup() {
-    // Serial and pin initialization
+    Serial.begin(9600);
+    Wire.begin();
     Serial1.begin(115200); 
     Serial2.begin(115200); 
     Serial3.begin(115200); 
-    Serial.begin(9600);
-    while (!Serial) delay(10); // Wait for serial port to connect
-    pinMode(pyro1Pin, OUTPUT);
-    pinMode(pyro2Pin, OUTPUT);
-    pinMode(pyroDroguePin, OUTPUT);
-    pinMode(pyroMainPin, OUTPUT);
-    pinMode(13, OUTPUT);   // Set pin 13 as output for the LED
-    pinMode(BUZZER_PIN, OUTPUT); // Set pin for buzzer
+    
+    pinMode(ledblu, OUTPUT);
+    pinMode(ledgrn, OUTPUT);
+    pinMode(ledred, OUTPUT);
+    pinMode(teensyled, OUTPUT);    
+    pinMode(pyro1, OUTPUT);
+    pinMode(pyro2, OUTPUT);
+    pinMode(pyro_drogue, OUTPUT);
+    pinMode(pyro_main, OUTPUT);
+    pinMode(buzzer, OUTPUT);
 
-    // Check if camera communication ports are initialized
-    /* if (!Serial1) {
-        Serial.println("Error: One or more camera communication ports not initialized.");
-        while (1);
-    } */
+    adafruitSD ();
+    teensySD ();
+    startup ();
+}
 
+void loop() {
+    Quaternion q;
+    eulerToQuaternion(euler.x(), euler.y(), euler.z(), &q);
+    normalizeQuaternion(&q);
+    double current_altitude = bmp.readAltitude(1013.25);
+    double current_accelZ = accel.z(); 
+    ekf.update(current_altitude, current_accelZ);  
+    update_apogee_detector(&detector, current_altitude);
+
+    String msg="";
+//===================================================================================//    
+//===================         FSM (FINITE STATE MACHINE)     ========================//
+//===================================================================================//
+
+// Handle different states
+switch (state) {
+    case PRE_FLIGHT: 
+            if (millis() > 600000) { 
+                startRec ();
+                state = LAUNCH_DETECTION;
+                msg = "Pre-launch checks passed. Ready for launch.";
+                teensysdwrite(msg);
+            }
+            break;
+    case LAUNCH_DETECTION: 
+            if (detectLaunch ()) {
+                launchTime = millis();
+                state = FIRST_STAGE_BURNOUT;
+                msg = "Launch detected, transitioning to state 2 for burnout detection.";
+                teensysdwrite(msg);
+            }
+            break;
+    case FIRST_STAGE_BURNOUT: 
+            if (detectBurnout ()) {
+                state = PREPARE_SECOND_STAGE;
+                msg = "First stage burnout detected, preparing second stage.";
+                teensysdwrite(msg);
+            }
+            break;
+    case PREPARE_SECOND_STAGE:
+            if (millis() - launchTime > 10000) { 
+                lightUpperStageMotor ();
+                state = SECOND_STAGE_BURNOUT;
+                msg="Second stage motor lit, monitoring for burnout.";
+                teensysdwrite(msg);
+            }
+            break;
+    case SECOND_STAGE_BURNOUT: 
+            if (detectBurnout ()) {
+                state = APOGEE_DETECTION;
+                msg = "Second stage burnout detected, transitioning to APOGEE_DETECTION.";
+                teensysdwrite(msg);
+            }
+            break;
+    case APOGEE_DETECTION: 
+            if (is_apogee_reached (&detector)) {
+                deployChute ();
+                state = MAIN_CHUTE_DEPLOYMENT;
+                msg="Apogee reached, main chute deployed.";
+                teensysdwrite(msg);
+            }
+            break;
+    case MAIN_CHUTE_DEPLOYMENT: 
+            if (detectLanding (bmp)) {
+                state = LANDING_CONFIRMATION;
+                msg="Landing detected, transitioning to recovery state.";
+                teensysdwrite(msg);
+            }
+            break;
+    case LANDING_CONFIRMATION: 
+            lowpowermode(sdwrite, transmitData);
+            msg="System is in recovery state.";
+            teensysdwrite(msg);
+            state = POST_FLIGHT;
+            break;
+    case POST_FLIGHT:
+            break;
+    }
+
+    delay(100); // I am delaying to prevent excess polling
+
+    // Log and transmit data
+    sdwrite();
+    transmitData();
+}
+
+    void adafruitSD() {
+    if (!SD.begin(sdCardPin)) {
+        Serial.println("SD card initialization failed!");
+        return;
+    }
+    Serial.println("SD card initialized!");
+    }
+    
+    void teensySD() {
+    if (!SD.begin(chipSelect)) {
+        Serial.println("Built-in SD card initialization failed!");
+        return;
+    }
+    }
+
+void startup () {
+
+    digitalWrite(ledblu, HIGH);
+    // ----------------------------
+    delay(500);
     if (!bmp.begin()) {
         Serial.println("Could not find a valid BMP280 sensor, check wiring!");
         while (1);
@@ -217,14 +217,10 @@ void setup() {
                     Adafruit_BMP280::SAMPLING_X16,    /* Pressure oversampling */
                     Adafruit_BMP280::FILTER_X16,      /* Filtering. */
                     Adafruit_BMP280::STANDBY_MS_125); /* Standby time. */
-
-    // Initialize SD card
-    if (!SD.begin(sdCardPin)) {
-        Serial.println("SD card initialization failed!");
-        return;
-    }
-    Serial.println("SD card initialized!");
-
+    // ---------------------------
+    digitalWrite(ledblu, LOW);
+    digitalWrite(ledgrn, HIGH);
+    // ------------------------
     // Initialize LoRa radio
     if (!rf95.init()) {
         Serial.println("LoRa radio init failed");
@@ -233,61 +229,15 @@ void setup() {
 
     rf95.setFrequency(RF95_FREQ);
     rf95.setTxPower(23, false);
-    
-    // Wait for flight computer to turn on (10 minutes)
-    // delay(600000); // 600000 milliseconds = 10 minutes
-    // TODO: Find a way to delay cam from turning on for 10 minutes.
-    // delay(100000);
-    // startRec();
-
+    // -------------------------
+    digitalWrite(ledgrn, LOW);
+    digitalWrite(ledred, HIGH);
+    // ------------------------
     // Initialize apogee detector
     init_apogee_detector(&detector, altitude_backing_array, WINDOW_SIZE);
     
     // Initialize EKF
     ekf.begin(bmp.readAltitude(1013.25), 0);  // Initial altitude and acceleration (set to 0)
-}
-
-void loop() {
-    if (!melodyPlayed) {  whatisthatmelody(); melodyPlayed = true; /*Set the flag to true after playing the melody*/  }
-
-    double current_altitude = bmp.readAltitude(1013.25); // Assuming sea level pressure
-    sensors_event_t event;
-    bno.getEvent(&event);
-    double current_accelZ = event.acceleration.z;  // Read the acceleration in Z-axis
-    
-    ekf.update(current_altitude, current_accelZ);  // Update the EKF with new sensor data
-
-    update_apogee_detector(&detector, current_altitude);
-    
-    if (is_apogee_reached(&detector) && !apogeeReached) {
-        apogeeReached = true;
-        // Additional logic for apogee event
-    }
-    
-    delay(100); // Adjust delay as needed
-
-    // Rocket stages logic
-    if (!launchDetected) {
-        launchDetected = detectLaunch(bmp);
-    } else if (!firstStageBurnoutDetected) {
-        firstStageBurnoutDetected = detectFirstStageBurnout(bmp);
-    } else if (firstStageBurnoutDetected && !apogeeReached) {
-        deployFirstStagePyros();
-    } else if (firstStageBurnoutDetected && apogeeReached && !mainChuteDeployed) {
-        separateStages();
-        lightUpperStageMotor();
-        deploySecondStageDroguePyros(detector, bmp, apogeeReached);
-    } else if (apogeeReached && mainChuteDeployed) {
-        if (!isLanded) {
-            isLanded = detectLanding(bmp);
-        } else {
-            enterLowPowerMode(logData, transmitData);
-        }
-    }
-
-    delay(100); // I am delaying to prevent excess polling
-
-    // Log and transmit data
-    logData();
-    transmitData();
-}
+    // ------------------------
+    digitalWrite(ledred, LOW);
+ }

@@ -34,7 +34,7 @@ Quaternion q;
 // --- DETECT LAUNCH --- //
 
 bool detectLaunch () {
-    if (accel.x() > 13) {
+    if (accel.y() > 13) {
         Serial.println("Launch detected based on acceleration.");
         return true;
     }

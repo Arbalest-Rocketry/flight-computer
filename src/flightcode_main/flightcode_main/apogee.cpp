@@ -1,4 +1,3 @@
-// apogee.cpp
 #include "apogee.h"
 
 Adafruit_BMP280 bmp; // BMP280 object

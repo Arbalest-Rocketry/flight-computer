@@ -31,6 +31,7 @@ enum state {
 #include <iostream>
 #include <cmath>
 #include <cstring>
+#include <utility/imumaths.h>
 #include <TimeLib.h> 
 #include "EKF.h" 
 #include "apogee.h"
@@ -43,13 +44,17 @@ enum state {
 EKF ekf;
 double altitude_backing_array[WINDOW_SIZE]; // Array to store altitude data for the rolling window
 ApogeeDetector detector; // Apogee detector object
+
 //LEDs and Buzzer
 const int ledblu = 7, ledgrn = 4, ledred = 0, teensyled = 13;
+
 //SD CARD(S) CS
 const int chipSelect = BUILTIN_SDCARD;
 const int sdCardPin = 10;
 unsigned long launchTime = 0;
 Quaternion q;
+imu::Vector<3> accel = bno.getVector(Adafruit_BNO055::VECTOR_ACCELEROMETER);
+imu::Vector<3> euler = bno.getVector(Adafruit_BNO055::VECTOR_EULER);
 
 //LoRa settings
 #define RFM95_CS 1
@@ -92,13 +97,10 @@ void setup() {
 
 void loop() {
     Quaternion q;
-    sensors_event_t event;
-    bno.getEvent(&event);
-    
-    eulerToQuaternion(event.orientation.x, event.orientation.y, event.orientation.z, &q);
-    //normalizeQuaternion(&q); // Optional: Normalize to maintain numerical stability
+    eulerToQuaternion(euler.x(), euler.y(), euler.z(), &q);
+    normalizeQuaternion(&q);
     double current_altitude = bmp.readAltitude(1013.25);
-    double current_accelZ = event.acceleration.z; 
+    double current_accelZ = accel.z(); 
     ekf.update(current_altitude, current_accelZ);  
     update_apogee_detector(&detector, current_altitude);
 
@@ -193,8 +195,11 @@ switch (state) {
         return;
     }
     }
+
 void startup () {
+
     digitalWrite(ledblu, HIGH);
+    // ----------------------------
     delay(500);
     if (!bmp.begin()) {
         Serial.println("Could not find a valid BMP280 sensor, check wiring!");
@@ -212,7 +217,10 @@ void startup () {
                     Adafruit_BMP280::SAMPLING_X16,    /* Pressure oversampling */
                     Adafruit_BMP280::FILTER_X16,      /* Filtering. */
                     Adafruit_BMP280::STANDBY_MS_125); /* Standby time. */
-
+    // ---------------------------
+    digitalWrite(ledblu, LOW);
+    digitalWrite(ledgrn, HIGH);
+    // ------------------------
     // Initialize LoRa radio
     if (!rf95.init()) {
         Serial.println("LoRa radio init failed");
@@ -221,13 +229,15 @@ void startup () {
 
     rf95.setFrequency(RF95_FREQ);
     rf95.setTxPower(23, false);
-
+    // -------------------------
+    digitalWrite(ledgrn, LOW);
+    digitalWrite(ledred, HIGH);
+    // ------------------------
     // Initialize apogee detector
     init_apogee_detector(&detector, altitude_backing_array, WINDOW_SIZE);
     
     // Initialize EKF
     ekf.begin(bmp.readAltitude(1013.25), 0);  // Initial altitude and acceleration (set to 0)
-    digitalWrite(ledblu, LOW);
-
-  if (!melodyPlayed1) {  whatisthatmelody1(); melodyPlayed1 = true;}
+    // ------------------------
+    digitalWrite(ledred, LOW);
  }

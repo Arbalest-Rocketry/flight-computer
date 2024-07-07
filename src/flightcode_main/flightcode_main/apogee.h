@@ -1,4 +1,3 @@
-// apogee.h
 #ifndef APOGEE_H
 #define APOGEE_H
 

@@ -1,4 +1,3 @@
-// Libraries
 #include <SPI.h>
 #include <SD.h>
 #include <Wire.h>
@@ -20,18 +19,21 @@
 #include "quaternion.h"
 
 int state;
+EKF ekf;
+imu::Vector<3> accel = bno.getVector(Adafruit_BNO055::VECTOR_ACCELEROMETER);
+imu::Vector<3> euler = bno.getVector(Adafruit_BNO055::VECTOR_EULER);
 
-//LoRa settings
 #define RFM95_CS 1
 #define RFM95_RST 34
 #define RFM95_INT 8
 #define RF95_FREQ 915.0
 
-RH_RF95 rf95(RFM95_CS, RFM95_INT);  // Declare the rf95 object
+RH_RF95 rf95(RFM95_CS, RFM95_INT); 
 Quaternion q;
 
+// --- DETECT LAUNCH --- //
+
 bool detectLaunch () {
-    imu::Vector<3> accel = bno.getVector(Adafruit_BNO055::VECTOR_ACCELEROMETER);
     if (accel.x() > 13) {
         Serial.println("Launch detected based on acceleration.");
         return true;
@@ -39,7 +41,7 @@ bool detectLaunch () {
     return false;
 }
 
-// --- BURNOUT --- //
+// -- BURNOUT -- //
 
 /* First Stage: The first stage of a rocket generally 
  * provides the primary thrust necessary for liftoff and 
@@ -63,9 +65,11 @@ bool detectLaunch () {
 */
 bool detectBurnout () {
     static int stage = 1;
-    imu::Vector<3> accel = bno.getVector(Adafruit_BNO055::VECTOR_ACCELEROMETER);
+
     float burnoutThreshold = (stage == 1) ? 2.0 : 1.5; 
-    if (accel.x() <= burnoutThreshold) {
+    if (accel.y() <= burnoutThreshold) { 
+      //y-axis points up from our setup: https://github.com/Arbalest-Rocketry/flight-computer/blob/master/images/electronics_mount_cad_2.png
+      //https://github.com/Arbalest-Rocketry/flight-computer/blob/feature/deploy/chutes/images/PCB_front.png
         Serial.print("Burnout detected at stage ");
         Serial.println(stage);
         stage++; 
@@ -80,14 +84,18 @@ void sdwrite () {
     if (dataFile) {
         float temperature = bmp.readTemperature();
         float altitude = bmp.readAltitude(1013.25);
-        imu::Vector<3> accel = bno.getVector(Adafruit_BNO055::VECTOR_ACCELEROMETER);
-
+        float filteredaltitude = ekf.getFilteredAltitude();
+        float filteredAy = ekf.Ay_filtered()
         dataFile.print("Temperature,");
         dataFile.print(temperature);
-        dataFile.print(",Altitude,");
+        dataFile.print(",Raw BMP Altitude,");
         dataFile.print(altitude);
-        dataFile.print(",Accel X,");
-        dataFile.print(accel.x());
+        dataFile.print(",EKF BMP Altitude,");
+        dataFile.print(filteredaltitude);
+        dataFile.print(",Accel Y,");
+        dataFile.print(accel.y());
+        dataFile.print(",EKF Accel Y,");
+        dataFile.print(filteredAy);        
         dataFile.print(",System State,");
         dataFile.println(state);
 
@@ -97,7 +105,6 @@ void sdwrite () {
         Serial.println("Error opening datalog.txt");
     }
 }
-
 
 //for teensy sd
 void teensysdwrite (const String& msg) {
@@ -125,37 +132,34 @@ void teensysdwrite (const String& msg) {
 
 String zeropad(int num) { return (num < 10 ? "0" : "") + String(num); }
 
+// -- TRANSMIT DATA -- //
 void transmitData () {
     Serial.println("Transmitting data ...");
     DynamicJsonDocument doc(256);
-    sensors_event_t event;
-    bno.getEvent(&event);
-
-    float yaw = event.orientation.x;
-    float pitch = event.orientation.y;
-    float roll = event.orientation.z;
-    float qr, qi, qj, qk;
-    eulerToQuaternion(event.orientation.x, event.orientation.y, event.orientation.z, &q);
+    
+    eulerToQuaternion(euler.x(), euler.y(), euler.z(), &q);
     float temperature = bmp.readTemperature();
     double altitude = bmp.readAltitude(1013.25);
     float pressure = bmp.readPressure();
+    float filt_alt = ekf.getFilteredAltitude();
 
-    char tempStr[8], altStr[8], pressStr[8], qrStr[8], qiStr[8], qjStr[8], qkStr[8];
+    char tempStr[8], altStr[8], pressStr[8], qwstr[8], qxstr[8], qystr[8], qzstr[8],filtAltStr[8];
     dtostrf(temperature, 5, 2, tempStr);
     dtostrf(altitude, 5, 2, altStr);
     dtostrf(pressure, 5, 2, pressStr);
-    dtostrf(qr, 5, 2, qrStr);
-    dtostrf(qi, 5, 2, qiStr);
-    dtostrf(qj, 5, 2, qjStr);
-    dtostrf(qk, 5, 2, qkStr);
+    dtostrf(filt_alt, 5, 2, filtAltStr);
+    dtostrf(q.w, 5, 2, qwstr);
+    dtostrf(q.x, 5, 2, qxstr);
+    dtostrf(q.y, 5, 2, qystr);
+    dtostrf(q.z, 5, 2, qzstr);
 
     doc["temperature"] = tempStr;
     doc["pressure"] = pressStr;
     doc["altitude"] = altStr;
-    doc["qr"] = qrStr;
-    doc["qi"] = qiStr;
-    doc["qj"] = qjStr;
-    doc["qk"] = qkStr;
+    doc["qw"] = qwStr;
+    doc["qx"] = qxStr;
+    doc["qy"] = qyStr;
+    doc["qz"] = qzStr;
 
     char jsonBuffer[256];
     serializeJson(doc, jsonBuffer);
@@ -164,19 +168,34 @@ void transmitData () {
 }
 
 /*
-void abortSystem () {
-    imu::Quaternion quat = bno.getQuat();  // Get quaternion for current orientation
-    double roll, pitch, yaw;
-    bno.getOrientation(Adafruit_BNO055::VECTOR_EULER, &roll, &pitch, &yaw);
-
-    if (abs(pitch) > 25 || abs(roll) > 25) {
-        Serial.println("Abort detected due to orientation limits.");
-        state = 5;  // Transition to an abort state
-        // Handle abort logic (e.g., activate recovery systems)
-    }
-}
+Roll (euler.x()): Tilting left/right (like a ship rocking sideways).
+Pitch (euler.y()): Tilting forward/backward (like nodding).
+Yaw (euler.z()): Spinning around the vertical axis (like a spinning top).
 */
 
+void cutOffPower() {
+    digitalWrite(teensyled, LOW);
+    digitalWrite(pyro1, LOW);
+    digitalWrite(pyro2, LOW);
+    digitalWrite(pyro_drogue, LOW);
+    digitalWrite(pyro_main, LOW);
+    teensysdwrite("System shutdown initiated.");
+    delay(100); 
+    rf95.sleep();  
+    digitalWrite(ledblu, LOW);
+    digitalWrite(ledgrn, LOW);
+    digitalWrite(ledred, LOW);
+}
+
+// -- ABORT! -- //
+void abortSystem () {
+    if (abs(euler.y()) > 35 || abs(euler.x()) > 45) {
+        Serial.println("Abort detected due to orientation limits.");
+        cutoffpower();
+    }
+}
+
+// -- DETECT LANDING -- //
 bool detectLanding (const Adafruit_BMP280& bmp) {
     static float lastAltitude = bmp.readAltitude(1013.25);
     float currentAltitude = bmp.readAltitude(1013.25);
@@ -189,6 +208,7 @@ bool detectLanding (const Adafruit_BMP280& bmp) {
     return false;
 }
 
+// -- LOW POWER MODE -- //
 void lowpowermode (void (*sdwrite)(), void (*transmitData)()) {
     Serial.println("Entering low power mode");
 

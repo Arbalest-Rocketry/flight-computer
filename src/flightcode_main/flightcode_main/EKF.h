@@ -31,6 +31,8 @@ public:
     double current_state[3];
 
     EKF();   // Constructor
-    void update(double barometerAltitude, double accelZ);   // Main EKF filter caller
-    void begin(double initialBarometerAltitude, double initialAccelZ);
+    void update(double barometerAltitude, double accelY);   // Main EKF filter caller
+    void begin(double initialBarometerAltitude, double initialaccelY);
+    double getFilteredAltitude();  //to get the filtered altitude
+    double Ay_filtered();  //to get the filtered acceleration
 };

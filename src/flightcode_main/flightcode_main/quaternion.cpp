@@ -1,6 +1,7 @@
 #include "quaternion.h"
 #include <math.h>
 
+
 void eulerToQuaternion(float yaw, float pitch, float roll, Quaternion* q) {
     float cy = cos(yaw * 0.5);
     float sy = sin(yaw * 0.5);

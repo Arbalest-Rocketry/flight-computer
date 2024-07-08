@@ -19,17 +19,6 @@
 #include "quaternion.h"
 
 int state;
-EKF ekf;
-imu::Vector<3> accel = bno.getVector(Adafruit_BNO055::VECTOR_ACCELEROMETER);
-imu::Vector<3> euler = bno.getVector(Adafruit_BNO055::VECTOR_EULER);
-
-#define RFM95_CS 1
-#define RFM95_RST 34
-#define RFM95_INT 8
-#define RF95_FREQ 915.0
-
-RH_RF95 rf95(RFM95_CS, RFM95_INT); 
-Quaternion q;
 
 // --- DETECT LAUNCH --- //
 
@@ -85,7 +74,7 @@ void sdwrite () {
         float temperature = bmp.readTemperature();
         float altitude = bmp.readAltitude(1013.25);
         float filteredaltitude = ekf.getFilteredAltitude();
-        float filteredAy = ekf.Ay_filtered()
+        float filteredAy = ekf.Ay_filtered();
         dataFile.print("Temperature,");
         dataFile.print(temperature);
         dataFile.print(",Raw BMP Altitude,");
@@ -131,6 +120,8 @@ void teensysdwrite (const String& msg) {
 }
 
 String zeropad(int num) { return (num < 10 ? "0" : "") + String(num); }
+void deployChute(){};//TODO
+void lightUpperStageMotor(){};//TODO
 
 // -- TRANSMIT DATA -- //
 void transmitData () {
@@ -156,10 +147,10 @@ void transmitData () {
     doc["temperature"] = tempStr;
     doc["pressure"] = pressStr;
     doc["altitude"] = altStr;
-    doc["qw"] = qwStr;
-    doc["qx"] = qxStr;
-    doc["qy"] = qyStr;
-    doc["qz"] = qzStr;
+    doc["qw"] = qwstr;
+    doc["qx"] = qxstr;
+    doc["qy"] = qystr;
+    doc["qz"] = qzstr;
 
     char jsonBuffer[256];
     serializeJson(doc, jsonBuffer);
@@ -173,7 +164,7 @@ Pitch (euler.y()): Tilting forward/backward (like nodding).
 Yaw (euler.z()): Spinning around the vertical axis (like a spinning top).
 */
 
-void cutOffPower() {
+void cutoffpower() {
     digitalWrite(teensyled, LOW);
     digitalWrite(pyro1, LOW);
     digitalWrite(pyro2, LOW);
@@ -196,7 +187,7 @@ void abortSystem () {
 }
 
 // -- DETECT LANDING -- //
-bool detectLanding (const Adafruit_BMP280& bmp) {
+bool detectLanding (Adafruit_BMP280& bmp) {
     static float lastAltitude = bmp.readAltitude(1013.25);
     float currentAltitude = bmp.readAltitude(1013.25);
 

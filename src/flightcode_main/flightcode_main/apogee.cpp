@@ -1,7 +1,5 @@
 #include "apogee.h"
 
-bool apogeeReached = false;
-
 // Rolling Window Functions
 void init_rolling_window(RollingWindow *rw, double *pBackingArray, size_t capacity) {
     rw->backing_array = pBackingArray;

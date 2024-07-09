@@ -19,6 +19,9 @@
 #include "quaternion.h"
 
 int state;
+// Define the pin numbers
+const int 
+pyrS1droguechute = 20,pyrS1mainchute = 21,pyrS12sep = 22,pyroIgniteS2 = 23,pyrS2droguechute = 24,pyrS2mainchute = 25;
 
 // --- DETECT LAUNCH --- //
 
@@ -66,6 +69,8 @@ bool detectBurnout () {
     }
     return false;
 }
+
+bool detectApogee() {return is_apogee_reached(&detector);}
 
 //for adafruit sd
 void sdwrite () {
@@ -120,8 +125,20 @@ void teensysdwrite (const String& msg) {
 }
 
 String zeropad(int num) { return (num < 10 ? "0" : "") + String(num); }
-void deployChute(){};//TODO
-void lightUpperStageMotor(){};//TODO
+
+void deployPyro(int pin, const char* message) {
+    Serial.println(message);
+    digitalWrite(pin, HIGH); 
+    delay(5000); //just making sure 
+    digitalWrite(pin, LOW);
+}
+
+void deployS1drogue() {deployPyro(pyrS1droguechute, "Deploying first stage drogue pyros");}
+void deployS1main() {deployPyro(pyrS1mainchute, "Deploying first stage main pyros");}
+void separatestages() {deployPyro(pyrS12sep, "Separating stages...");}
+void igniteupperstagemotors(){deployPyro(pyroIgniteS2, "Igniting upper stage motors ...");}
+void deployS2drogue() {deployPyro(pyrS2droguechute, "Deploying second stage drogue pyros");}
+void deployS2main() {deployPyro(pyrS2mainchute, "Deploying second stage main pyros");}
 
 // -- TRANSMIT DATA -- //
 void transmitData () {
@@ -166,10 +183,12 @@ Yaw (euler.z()): Spinning around the vertical axis (like a spinning top).
 
 void cutoffpower() {
     digitalWrite(teensyled, LOW);
-    digitalWrite(pyro1, LOW);
-    digitalWrite(pyro2, LOW);
-    digitalWrite(pyro_drogue, LOW);
-    digitalWrite(pyro_main, LOW);
+    pinMode(pyrS1droguechute, OUTPUT);
+    pinMode(pyrS1mainchute, OUTPUT);
+    pinMode(pyrS12sep, OUTPUT);
+    pinMode(pyroIgniteS2, OUTPUT);
+    pinMode(pyrS2droguechute, OUTPUT);
+    pinMode(pyrS2mainchute, OUTPUT);
     teensysdwrite("System shutdown initiated.");
     delay(100); 
     rf95.sleep();  
@@ -187,13 +206,19 @@ void abortSystem () {
 }
 
 // -- DETECT LANDING -- //
-bool detectLanding (Adafruit_BMP280& bmp) {
-    static float lastAltitude = bmp.readAltitude(1013.25);
-    float currentAltitude = bmp.readAltitude(1013.25);
+bool detectLanding(Adafruit_BMP280 &bmp) {
+    static double lastAltitude = 0;
+    double currentAltitude = bmp.readAltitude(1013.25);
+    static unsigned long landedTime = millis();
 
-    if (fabs(currentAltitude - lastAltitude) < 0.1) {  // Very small change indicates landing
-        Serial.println("Landing detected based on altitude stability.");
-        return true;
+    // Check if altitude remains constant (±0.1 meter) for more than 5 seconds
+    if (abs(currentAltitude - lastAltitude) < 0.1) {
+        if (millis() - landedTime > 5000) {
+            Serial.println("Landing detected");
+            return true;
+        }
+    } else {
+        landedTime = millis();
     }
     lastAltitude = currentAltitude;
     return false;

@@ -12,8 +12,7 @@ pyrS1droguechute,pyrS1mainchute,pyrS12sep,pyroIgniteS2,pyrS2droguechute,pyrS2mai
 extern bool isLowPowerModeEntered;
 extern ApogeeDetector detector;
 extern Adafruit_BNO055 bno;
-extern imu::Vector<3> accel;
-extern imu::Vector<3> euler;
+extern imu::Vector<3> accel, euler; 
 
 // Function declarations for rocket stages logic
 bool detectLaunch();

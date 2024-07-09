@@ -1,96 +1,63 @@
+///////////////////////////////////////////////////////////////////////////
+//
+//  Description:  
+//      Rocket State Machine for Goose 4
+//
+//  Comments:
+//
+//  Leroy Musa
+//  Arbalest Rocketry
+//  7/09/2024
+///////////////////////////////////////////////////////////////////////////  
+
 #include "rocket_stages.h"
 #include <Arduino.h>
 
 // Define the pin numbers
-const int pyro1Pin = 20;
-const int pyro2Pin = 21;
-const int pyroDroguePin = 22;
-const int pyroMainPin = 23;
-bool isLowPowerModeEntered = false;
+const int 
+pyrS1droguechute = 20,pyrS1mainchute = 21,pyrS12sep = 22,pyroIgniteS2 = 23,pyrS2droguechute = 24,pyrS2mainchute = 25;
 
 // Define the BNO055 object
 Adafruit_BNO055 bno = Adafruit_BNO055(55, 0x28);
 
-bool detectLaunch(Adafruit_BMP280 &bmp) {
-    static double groundAltitude = bmp.readAltitude(1013.25);
-    double currentAltitude = bmp.readAltitude(1013.25);
-    double altitudeDifference = currentAltitude - groundAltitude;
-
-    // Assuming launch is detected if the altitude difference is greater than 5 meters
-    if (altitudeDifference > 1.0) { // for test at home ( I can't lift the breadboard more than 30cm :D )
-        Serial.println("Launch detected");
+bool detectLaunch () {
+    if (accel.y() > 13) {
+        Serial.println("Launch detected based on acceleration.");
         return true;
     }
     return false;
 }
 
-void deployFirstStagePyros() {
-    Serial.println("Deploying first stage pyros");
-    digitalWrite(pyro1Pin, HIGH);
-    delay(1000); // Ensure the pyro is activated
-    digitalWrite(pyro1Pin, LOW);
+void deployPyro(int pin, const char* message) {
+    Serial.println(message);
+    digitalWrite(pin, HIGH); 
+    delay(5000); //just making sure 
+    digitalWrite(pin, LOW);
 }
 
-bool detectFirstStageBurnout(Adafruit_BMP280 &bmp) {
-    static double lastAltitude = 0;
-    static unsigned long lastTime = millis();
-    unsigned long currentTime = millis();
-    double currentAltitude = bmp.readAltitude(1013.25);
+void deployS1drogue() {deployPyro(pyrS1droguechute, "Deploying first stage drogue pyros");}
+void deployS1main() {deployPyro(pyrS1mainchute, "Deploying first stage main pyros");}
+void separatestages() {deployPyro(pyrS12sep, "Separating stages...");}
+void igniteupperstagemotors(){deployPyro(pyroIgniteS2, "Igniting upper stage motors ...");}
+void deployS2drogue() {deployPyro(pyrS2droguechute, "Deploying second stage drogue pyros");}
+void deployS2main() {deployPyro(pyrS2mainchute, "Deploying second stage main pyros");}
 
-    // Check if altitude remains constant (±0.1 meter) for more than 2 seconds
-    if (abs(currentAltitude - lastAltitude) < 0.1) {
-        if (currentTime - lastTime > 2000) {
-            Serial.println("First stage burnout detected");
-            return true;
-        }
-    } else {
-        lastTime = currentTime;
+
+bool detectBurnout () {
+    static int stage = 1;
+    float burnoutThreshold = (stage == 1) ? 2.0 : 1.5; 
+    if (accel.y() <= burnoutThreshold) { 
+      //y-axis points up from our setup: https://github.com/Arbalest-Rocketry/flight-computer/blob/master/images/electronics_mount_cad_2.png
+      //https://github.com/Arbalest-Rocketry/flight-computer/blob/feature/deploy/chutes/images/PCB_front.png
+        Serial.print("Burnout detected at stage ");
+        Serial.println(stage);
+        stage++; 
+        return true;
     }
-    lastAltitude = currentAltitude;
     return false;
 }
 
-void separateStages() {
-    Serial.println("Separating stages");
-    digitalWrite(pyro1Pin, HIGH);
-    delay(1000); // Ensure the separation pyro is activated
-    digitalWrite(pyro1Pin, LOW);
-}
-
-void lightUpperStageMotor() {
-    Serial.println("Lighting upper stage motor");
-    digitalWrite(pyro2Pin, HIGH);
-    delay(1000); // Ensure the upper stage motor is ignited
-    digitalWrite(pyro2Pin, LOW);
-}
-
-void deploySecondStageDroguePyros(ApogeeDetector &detector, Adafruit_BMP280 &bmp, bool &apogeeReached) {
-    if (is_apogee_reached(&detector) && !apogeeReached) {
-        Serial.println("Apogee Reached!");
-        Serial.println("Deploying second stage pyros (drogue chute)");
-        delay(30000);
-        digitalWrite(pyroDroguePin, HIGH);
-        delay(1000); // Ensure the pyro is activated
-        digitalWrite(pyroDroguePin, LOW);
-        apogeeReached = true;
-    } else {
-        Serial.println("Apogee not reached yet.");
-    }
-}
-
-void deployMainParachutePyros(bool &apogeeReached, bool &mainChuteDeployed, Adafruit_BMP280 &bmp) {
-    if (apogeeReached && !mainChuteDeployed) {
-        double currentAltitude = bmp.readAltitude(1013.25);
-        if (currentAltitude <= 500) { // Assuming altitude is in meters
-            Serial.println("500 meters above ground level on descent reached");
-            Serial.println("Deploying main parachute pyros");
-            digitalWrite(pyroMainPin, HIGH);
-            delay(1000);
-            digitalWrite(pyroMainPin, LOW);
-            mainChuteDeployed = true;
-        }
-    }
-}
+bool detectApogee() {return is_apogee_reached(&detector);}
 
 bool detectLanding(Adafruit_BMP280 &bmp) {
     static double lastAltitude = 0;

@@ -5,25 +5,28 @@
 #include <Adafruit_BNO055.h>
 #include "apogee.h"
 
-// Define the necessary pin numbers as extern
-extern const int pyro1Pin;
-extern const int pyro2Pin;
-extern const int pyroDroguePin;
-extern const int pyroMainPin;
-extern bool isLowPowerModeEntered;
+// Pin definitions
+extern const int 
+pyrS1droguechute,pyrS1mainchute,pyrS12sep,pyroIgniteS2,pyrS2droguechute,pyrS2mainchute;
 
-// Declare the BNO055 object as external
+extern bool isLowPowerModeEntered;
+extern ApogeeDetector detector;
 extern Adafruit_BNO055 bno;
+extern imu::Vector<3> accel;
+extern imu::Vector<3> euler;
 
 // Function declarations for rocket stages logic
-bool detectLaunch(Adafruit_BMP280 &bmp);
-void deployFirstStagePyros();
-bool detectFirstStageBurnout(Adafruit_BMP280 &bmp);
-void separateStages();
-void lightUpperStageMotor();
-void deploySecondStageDroguePyros(ApogeeDetector &detector, Adafruit_BMP280 &bmp, bool &apogeeReached);
-void deployMainParachutePyros(bool &apogeeReached, bool &mainChuteDeployed, Adafruit_BMP280 &bmp);
+bool detectLaunch();
+void deployPyro(int pin, const char* message);
+void deployS1drogue();
+void deployS1main();
+void separatestages();
+void igniteupperstagemotors();
+void deployS2drogue();
+void deployS2main();
+bool detectBurnout();
 bool detectLanding(Adafruit_BMP280 &bmp);
 void enterLowPowerMode(void (*logData)(), void (*transmitData)());
+bool detectApogee();
 
 #endif /* ROCKET_STAGES_H */

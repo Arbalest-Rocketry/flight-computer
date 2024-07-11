@@ -162,6 +162,7 @@ Ensure you have the following components ready:
 
 # To Infinity and Beyond
 <div style="text-align: center;">
-  <img src="images/LC2022.png" alt="LC 2022 logo" width="42%" style="display: inline-block;">
-  <img src="images/LC2023.png" alt="LC 2023 logo" width="40%" style="display: inline-block;">
+  <img src="images/LC2022.png" alt="LC 2022 logo" width="33%" style="display: inline-block;">
+  <img src="images/LC2023.png" alt="LC 2023 logo" width="30%" style="display: inline-block;">
+  <img src="images/LC2024.jpg" alt="LC 2024 logo" width="22.5%" style="display: inline-block;">
 </div>

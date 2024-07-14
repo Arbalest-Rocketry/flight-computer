@@ -42,9 +42,9 @@ Pictures showing our current **Arbalest Flight Computer** schematics layout
   <img src="images/FlightComputer_sch.png" alt="Arbalest Flight Computer Demo" width="100%" style="display: inline-block;">
 </div>
 <div style="text-align: center;">
-  <img src="images/PCBv2.0_Gerber.png" alt="PCB Gerber" width="35%" style="display: inline-block;">
-  <img src="images/PCB_front.png" alt="PCB 3D Front" width="31.%" style="display: inline-block;">
-  <img src="images/PCB_back.png" alt="PCB 3D Rear" width="31.%" style="display: inline-block;">
+  <img src="images/PCBv2.0_Gerber.png" alt="PCB Gerber" width="32.%" style="display: inline-block;">
+  <img src="images/PCB_front.png" alt="PCB 3D Front" width="32.%" style="display: inline-block;">
+  <img src="images/PCB_back.png" alt="PCB 3D Rear" width="32.%" style="display: inline-block;">
 </div>
 
 ## IRLv2.0

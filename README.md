@@ -2,6 +2,10 @@
 
 This repository contains the code and documentation for the flight computer used for our 2 Stage High Power Rocket set to launch at Launch Canada 2024 
 
+<p align="center">
+    <img src="images/Aerostructure.png" alt="Image showing me holding our COTS Flight Computer" width="75%" style="display: inline-block; margin-right: 10px;">
+</p>
+
 ## Components
 - Microcontroller: [Teensy 4.1](https://www.pjrc.com/store/teensy41.html)
 - Sensors:

@@ -165,9 +165,11 @@ Ensure you have the following components ready:
 
 The low noise amplifiers (LNAs) are crucial components in the Arbalest flight computer's communication system. They are used to amplify weak signals received from the rocket, ensuring they are strong enough to be processed and analyzed. The following images show the setup of the LNAs connected to the Teensy 4.1 microcontroller board:
 
-![LoRaLNA](images/LoRaLNA.jpg)
-![LNA1](images/LNA1.jpg)
-![LNA2](images/LNA2.jpg)
+<div style="text-align: center;">
+  <img src="images/LoRaLNA.jpg" alt="LoRaLNA" width="33%" style="display: inline-block;">
+  <img src="images/LNA1.jpg" alt="LNA1" width="33%" style="display: inline-block;">
+  <img src="images/LNA2.jpg" alt="LNA2" width="33%" style="display: inline-block;">
+</div>
 
 ### Function of the Low Noise Amplifiers
 
@@ -204,9 +206,10 @@ The LoRa communication module is known for its ability to transmit data over lon
 
 ---
 # To Infinity and Beyond
-<div style="text-align: center;">
-  <img src="images/LC_Patch_2024.png" alt="LC 2024 logo" width="100%" style="display: inline-block;">
-</div>
+<p align="center">
+  <img src="images/LC_Patch_2024.png" alt="LC 2024 logo" width="33.33%">
+</p>
+
 
 ---
 # Authors

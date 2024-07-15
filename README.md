@@ -12,6 +12,7 @@ This repository contains the code and documentation for the flight computer used
   - Altimeter: [Adafruit BMP280](https://www.adafruit.com/product/2651)
   - IMU (Inertial Measurement Unit): [Adafruit BNO055](https://www.adafruit.com/product/4646)
   - GPS Module: [SparkFun GNSS Receiver Breakout - MAX-M10S (Qwiic)](https://www.sparkfun.com/products/18037)
+  - SD Breakout: [Adafruit SPI Flash SD Card - XTSD 512 MB](https://www.adafruit.com/product/4899)
 - Communication: [Adafruit LoRa RFM9X](https://www.adafruit.com/product/3072)
 - Our COTS (Commercial Off-The-Shelf) Flight Computer: [Featherweight Blue Raven](https://www.featherweightaltimeters.com/blue-raven-altimeter.html)
 (left)

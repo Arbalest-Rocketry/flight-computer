@@ -2,12 +2,17 @@
 
 This repository contains the code and documentation for the flight computer used for our 2 Stage High Power Rocket set to launch at Launch Canada 2024 
 
+<p align="center">
+    <img src="images/Aerostructure.png" alt="Image showing me holding our COTS Flight Computer" width="100%" style="display: inline-block; margin-right: 10px;">
+</p>
+
 ## Components
 - Microcontroller: [Teensy 4.1](https://www.pjrc.com/store/teensy41.html)
 - Sensors:
   - Altimeter: [Adafruit BMP280](https://www.adafruit.com/product/2651)
   - IMU (Inertial Measurement Unit): [Adafruit BNO055](https://www.adafruit.com/product/4646)
   - GPS Module: [SparkFun GNSS Receiver Breakout - MAX-M10S (Qwiic)](https://www.sparkfun.com/products/18037)
+  - SD Breakout: [Adafruit SPI Flash SD Card - XTSD 512 MB](https://www.adafruit.com/product/4899)
 - Communication: [Adafruit LoRa RFM9X](https://www.adafruit.com/product/3072)
 - Our COTS (Commercial Off-The-Shelf) Flight Computer: [Featherweight Blue Raven](https://www.featherweightaltimeters.com/blue-raven-altimeter.html)
 (left)
@@ -150,7 +155,7 @@ Ensure you have the following components ready:
 ### Step 2: Physical Connection
 
 1. **Connect Power**: Use jumper wires to connect the power source to the Teensy 4.1 to provide power to the entire setup.
-2. **Connect Camera**: Solder jumper wires onto the RX (receive) and TX (transmit) pins of the Runcam Split 4 camera. Then, you can connect the RX wire to the RX pin and the TX wire to the TX pin on the Teensy 4.1 for video data transmission.
+2. **Connect Camera**: Solder jumper wires onto the RX (receive) and TX (transmit) pins of the Runcam Split 4 camera. Then, you can connect the RX wire to the TX pin and the TX wire to the RX pin on the Teensy 4.1 for video data transmission.
 3. **Ground Connection**: Connect another jumper wire from the ground (GND) pin of the Runcam Split 4 to any ground pin on Teensy 4.1 to complete the circuit.
 
 # Transceiver Test w/ RC plane
@@ -160,8 +165,57 @@ Ensure you have the following components ready:
   <img src="images/IMG_4162.jpg" alt="RC Plane w/ Flight Computer on board" width="30%" style="display: inline-block;">
 </div>
 
-# To Infinity and Beyond
+
+## Low Noise Amplifiers
+
+The low noise amplifiers (LNAs) are crucial components in the Arbalest flight computer's communication system. They are used to amplify weak signals received from the rocket, ensuring they are strong enough to be processed and analyzed. The following images show the setup of the LNAs connected to the Teensy 4.1 microcontroller board:
+
 <div style="text-align: center;">
-  <img src="images/LC2022.png" alt="LC 2022 logo" width="42%" style="display: inline-block;">
-  <img src="images/LC2023.png" alt="LC 2023 logo" width="40%" style="display: inline-block;">
+  <img src="images/LoRaLNA.jpg" alt="LoRaLNA" width="31%" style="display: inline-block;">
+  <img src="images/LNA1.jpg" alt="LNA1" width="31%" style="display: inline-block;">
+  <img src="images/LNA2.jpg" alt="LNA2" width="31%" style="display: inline-block;">
 </div>
+
+### Function of the Low Noise Amplifiers
+
+Low noise amplifiers are designed to amplify weak signals received by the antenna with minimal addition of noise. This is essential in communication systems where signal strength can be significantly reduced due to distance, atmospheric conditions, and other interference factors.
+
+### How the Amplifier and Filter Work
+
+The LNA circuit shown in the images is connected to the LoRa (Long Range) communication module to improve the signal-to-noise ratio. Here’s a detailed explanation of the process:
+
+1. **Signal Reception:**
+   - The weak signal received by the antenna is fed into the LNA. This signal is typically very weak and can be easily lost in the noise.
+
+2. **Amplification:**
+   - The LNA amplifies the weak signal. The primary goal is to increase the signal strength without adding significant noise. This is achieved through the careful design of the amplifier circuit, using high-quality components that contribute minimal noise.
+
+3. **Filtering:**
+   - After amplification, the signal may pass through a filter to remove unwanted frequencies or noise that might have been introduced during amplification. This ensures that only the desired signal is sent to the next stage of the communication system.
+
+4. **Enhanced Signal:**
+   - The enhanced signal, now much stronger and clearer, is fed into the LoRa module. The LoRa module can now process this signal more effectively, providing reliable communication over long distances.
+
+### Connecting to LoRa for Increased Gain
+
+The LoRa communication module is known for its ability to transmit data over long distances with low power consumption. By connecting the output of the LNA to the LoRa module, we achieve the following benefits:
+
+- **Increased Range:**
+  - The amplified signal can travel greater distances without degradation, improving the overall range of the communication system.
+
+- **Improved Signal Quality:**
+  - The higher signal-to-noise ratio achieved through amplification and filtering results in better signal quality, reducing the likelihood of errors in data transmission.
+
+- **Enhanced Reliability:**
+  - With stronger and clearer signals, the communication link becomes more reliable, which is critical for mission success in rocketry.
+
+---
+# To Infinity and Beyond
+<p align="center">
+  <img src="images/LC_Patch_2024.png" alt="LC 2024 logo" width="33.33%">
+</p>
+
+
+---
+# Authors
+- [Leroy Musa](mailto:musaleroyohio@gmail.com) - Author & Maintainer

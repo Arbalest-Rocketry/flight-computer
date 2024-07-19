@@ -18,7 +18,19 @@
 #include "runcamsplits.h"
 #include "quaternion.h"
 
-int state;
+// State names corresponding to the RocketState enum
+const char* stateNames[] = {
+    "PRE_LAUNCH",
+    "LAUNCH_DETECTED",
+    "FIRST_STAGE_BURNOUT",
+    "STAGE_SEPARATION",
+    "UPPER_STAGE_IGNITION",
+    "APOGEE",
+    "MAIN_CHUTE_DEPLOYMENT",
+    "LANDING_DETECTED",
+    "LOW_POWER_MODE"
+};
+
 // Define the pin numbers
 const int 
 pyrS1droguechute = 20,pyrS1mainchute = 21,pyrS12sep = 22,pyroIgniteS2 = 23,pyrS2droguechute = 24,pyrS2mainchute = 25;
@@ -72,31 +84,38 @@ bool detectBurnout () {
 
 bool detectApogee() {return is_apogee_reached(&detector);}
 
-//for adafruit sd
-void sdwrite () {
+void sdwrite() {
+    // Check if the file already exists
+    bool fileExists = SD.exists("flightlog001.txt");
+    
     File dataFile = SD.open("flightlog001.txt", FILE_WRITE);
     if (dataFile) {
+        // If the file doesn't exist, write the header row
+        if (!fileExists) {
+            dataFile.println("Temperature,Raw BMP Altitude,EKF BMP Altitude,Accel Y,EKF Accel Y,System State");
+        }
+        
         float temperature = bmp.readTemperature();
         float altitude = bmp.readAltitude(1013.25);
-        float filteredaltitude = ekf.getFilteredAltitude();
+        float filteredAltitude = ekf.getFilteredAltitude();
         float filteredAy = ekf.Ay_filtered();
-        dataFile.print("Temperature,");
-        dataFile.print(temperature);
-        dataFile.print(",Raw BMP Altitude,");
-        dataFile.print(altitude);
-        dataFile.print(",EKF BMP Altitude,");
-        dataFile.print(filteredaltitude);
-        dataFile.print(",Accel Y,");
-        dataFile.print(accel.y());
-        dataFile.print(",EKF Accel Y,");
-        dataFile.print(filteredAy);        
-        dataFile.print(",System State,");
-        dataFile.println(state);
+        
+        dataFile.print(temperature, 2);
+        dataFile.print(",");
+        dataFile.print(altitude, 2);
+        dataFile.print(",");
+        dataFile.print(filteredAltitude, 2);
+        dataFile.print(",");
+        dataFile.print(accel.y(), 2);
+        dataFile.print(",");
+        dataFile.print(filteredAy, 2);
+        dataFile.print(",");
+        dataFile.println(stateNames[currentState]);
 
         dataFile.close();
         Serial.println("Data logged.");
     } else {
-        Serial.println("Error opening datalog.txt");
+        Serial.println("Error opening flightlog001.txt");
     }
 }
 

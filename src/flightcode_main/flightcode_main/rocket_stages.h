@@ -7,6 +7,20 @@
 #include <SD.h>
 #include "quaternion.h"
 
+enum RocketState {
+    PRE_LAUNCH,
+    LAUNCH_DETECTED,
+    FIRST_STAGE_BURNOUT,
+    STAGE_SEPARATION,
+    UPPER_STAGE_IGNITION,
+    APOGEE,
+    MAIN_CHUTE_DEPLOYMENT,
+    LANDING_DETECTED,
+    LOW_POWER_MODE
+};
+
+extern RocketState currentState;
+
 // Pin definitions
 extern const int 
 pyrS1droguechute,pyrS1mainchute,pyrS12sep,pyroIgniteS2,pyrS2droguechute,pyrS2mainchute;
@@ -14,7 +28,8 @@ pyrS1droguechute,pyrS1mainchute,pyrS12sep,pyroIgniteS2,pyrS2droguechute,pyrS2mai
 extern bool isLowPowerModeEntered;
 extern ApogeeDetector detector;
 extern Adafruit_BNO055 bno; extern Adafruit_BMP280 bmp;
-extern imu::Vector<3> accel, euler; 
+extern imu::Vector<3> accel;
+extern imu::Vector<3> euler;
 extern int state; 
 extern const int ledblu, ledgrn, ledred, teensyled;
 extern EKF ekf;

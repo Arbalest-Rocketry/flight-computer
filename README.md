@@ -76,12 +76,11 @@ Pictures showing v1.0 of our **Arbalest Flight Computer** schematics layout
 
 This table outlines the major improvements made from PCB v1.0 to PCB v2.0.
 
-| Feature                      | PCB v1.0                                  | PCB v2.0                                        | Improvement Description                                    |
+| feature                      | pcb v1.0                                  | pcb v2.0                                        | improvement description                                    |
 |------------------------------|-------------------------------------------|-------------------------------------------------|------------------------------------------------------------|
-| Layering                     | Single-layer design                       | Multi-layer design                              | Enhanced routing and reduced interference                  |
-| Power Supply Management      | Basic power supply connections            | Advanced power routing                          | Improved power stability and distribution                  |
-| Communication Module         | Bottom center                             | Top right corner                                | Better isolation from other components for improved signal quality                    |
-| Sensor Integration           | Scattered sensor connections              | Centralized sensor connections                  | Simplified wiring and enhanced reliability                 |
+| layering                     | single-layer design                       | multi-layer design                              | enhanced routing and reduced interference                  |
+| power supply management      | basic power supply connections            | advanced power routing                          | improved power stability and distribution                  |
+| lora module         | back right                             | front top right corner                                | better isolation from other components for improved signal quality & better placement for electronics mount                   |
 
 ## How it works 
 Simple Illustration 
@@ -168,6 +167,15 @@ Ensure you have the following components ready:
 1. **Connect Power**: Use jumper wires to connect the power source to the Teensy 4.1 to provide power to the entire setup.
 2. **Connect Camera**: Solder jumper wires onto the RX (receive) and TX (transmit) pins of the Runcam Split 4 camera. Then, you can connect the RX wire to the TX pin and the TX wire to the RX pin on the Teensy 4.1 for video data transmission.
 3. **Ground Connection**: Connect another jumper wire from the ground (GND) pin of the Runcam Split 4 to any ground pin on Teensy 4.1 to complete the circuit.
+
+### Runcam Split Command list
+| action id                                 | value   | description                                |
+|-------------------------------------------|---------|--------------------------------------------|
+| `rcdevice_protocol_simulate_wifi_btn`     | 0x00    | simulation click the wi-fi button          |
+| `rcdevice_protocol_simulate_power_btn`    | 0x01    | simulation click the power button          |
+| `rcdevice_protocol_change_mode`           | 0x02    | switch the camera mode                     |
+| `rcdevice_protocol_change_start_recording`| 0x03    | control the camera to start recording      |
+| `rcdevice_protocol_change_stop_recording` | 0x04    | control the camera to stop recording       |
 
 # Transceiver Test w/ RC plane
 <div style="text-align: center;">

@@ -72,6 +72,17 @@ Pictures showing v1.0 of our **Arbalest Flight Computer** schematics layout
   <img src="images/gems/Leroy_holds_pcb_2.png" alt="PCB IRL Front" width="47%" style="display: inline-block;">
 </div>
 
+## PCB Improvements
+
+This table outlines the major improvements made from PCB v1.0 to PCB v2.0.
+
+| Feature                      | PCB v1.0                                  | PCB v2.0                                        | Improvement Description                                    |
+|------------------------------|-------------------------------------------|-------------------------------------------------|------------------------------------------------------------|
+| Layering                     | Single-layer design                       | Multi-layer design                              | Enhanced routing and reduced interference                  |
+| Power Supply Management      | Basic power supply connections            | Advanced power routing                          | Improved power stability and distribution                  |
+| Communication Module         | Bottom center                             | Top right corner                                | Better isolation from other components for improved signal quality                    |
+| Sensor Integration           | Scattered sensor connections              | Centralized sensor connections                  | Simplified wiring and enhanced reliability                 |
+
 ## How it works 
 Simple Illustration 
 <div style="text-align: center;">

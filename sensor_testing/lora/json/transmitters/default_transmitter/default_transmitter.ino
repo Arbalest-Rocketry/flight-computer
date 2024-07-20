@@ -39,6 +39,4 @@ void loop() {
   // Print JSON string
   Serial.println("JSON data sent:");
   Serial.println(jsonString);
-
-  delay(5000); // Delay before next iteration
 }

@@ -1,63 +1,62 @@
-#include <RH_RF95.h> // Include the LoRa library
+#include <RH_RF95.h>
 #include <SPI.h>
-#include <ArduinoJson.h> // Include the ArduinoJson library for JSON manipulation
 
-//#include <ArduinoWebsockets.h> // Include the ArduinoWebsockets library for websocket connecction
-//
-
-#define RFM95_CS 1 // Define the chip select pin for LoRa module
-#define RFM95_INT 8 // Define the interrupt pin for LoRa module
-#define RFM95_RST 34 // Define the reset pin for LoRa module
+#define RFM95_CS 1 // Define chip select pin for LoRa module
+#define RFM95_INT 8 // Define interrupt pin for LoRa module
+#define RFM95_RST 34 // Define reset pin for LoRa module
+#define RF95_FREQ 915.0 // Define frequency
+#define LED_PIN 13 // Define LED pin for status indication
 
 RH_RF95 rf95(RFM95_CS, RFM95_INT); // Initialize the LoRa module with the specified pins
-//WebsocketsClient client;
 
 void setup() {
-  Serial.begin(9600); // Initialize serial communication
-  while (!Serial);
-
   pinMode(RFM95_RST, OUTPUT); // Set reset pin as output
+  pinMode(LED_PIN, OUTPUT); // Set LED pin as output
   digitalWrite(RFM95_RST, HIGH); // Keep reset pin high initially
+  digitalWrite(LED_PIN, LOW); // Turn off LED initially
+
+  // Reset the LoRa module
+  digitalWrite(RFM95_RST, LOW);
+  delay(10);
+  digitalWrite(RFM95_RST, HIGH);
+  delay(10);
 
   // Initialize LoRa module
   if (!rf95.init()) {
-    Serial.println("LoRa initialization failed. Check your connections.");
+    digitalWrite(LED_PIN, HIGH); // Turn on LED if initialization fails
     while (true);
   }
-//  client.connect("ws://your-server-ip:3000/");
 
+  // Set the frequency to 915MHz
+  if (!rf95.setFrequency(RF95_FREQ)) {
+    digitalWrite(LED_PIN, HIGH); // Turn on LED if setting frequency fails
+    while (true);
   }
+
+  digitalWrite(LED_PIN, LOW); // Turn off LED if initialization succeeded
+}
 
 void loop() {
   // Check if data is available to receive
   if (rf95.available()) {
     // Buffer to hold received data
-    uint8_t bufReceived[RH_RF95_MAX_MESSAGE_LEN];
-    uint8_t len = sizeof(bufReceived); // Length of received data
+    uint8_t buf[RH_RF95_MAX_MESSAGE_LEN];
+    uint8_t len = sizeof(buf); // Length of received data
 
     // Read received data into buffer
-    if (rf95.recv(bufReceived, &len)) {
+    if (rf95.recv(buf, &len)) {
+      // Blink LED to indicate successful reception
+      digitalWrite(LED_PIN, HIGH);
+      delay(100); // Keep the LED on for 100 milliseconds
+      digitalWrite(LED_PIN, LOW);
+
       // Print received data
       Serial.print("Received data: ");
-      Serial.write(bufReceived, len);
+      Serial.write(buf, len);
       Serial.println();
-
-      // Parse received JSON
-      StaticJsonDocument<200> jsonDoc;
-      DeserializationError error = deserializeJson(jsonDoc, bufReceived, len);
-
-      // Check for parsing errors
-      if (error) {
-        Serial.print(F("deserializeJson() failed: "));
-        Serial.println(error.c_str());
-      } else {
-//        // Extract sensor data from JSON
-//        float sensorData = jsonDoc["sensor_data"];
-//        Serial.print("Sensor data: ");
-//        Serial.println(sensorData);
-      }
     } else {
-      Serial.println("Failed to receive message");
+      // Optional: handle failed message reception
+      // Serial.println("Failed to receive message");
     }
   }
 }

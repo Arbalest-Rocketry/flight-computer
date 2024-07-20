@@ -53,7 +53,10 @@ Pictures showing our current **Arbalest Flight Computer** schematics layout
 </div>
 
 ## IRLv2.0
-<div style="text-align: center;"></div>
+<div style="text-align: center;">
+  <img src="images/PCBV2irlf.jpg" alt="PCB IRL Front" width="47%" style="display: inline-block;">
+  <img src="images/PCBV2irlb.jpg" alt="PCB IRL Front" width="47%" style="display: inline-block;">
+</div>
 
 ## PCBv1.0 Schematics by `Baseer Yousufzai`
 Pictures showing v1.0 of our **Arbalest Flight Computer** schematics layout

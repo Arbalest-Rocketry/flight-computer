@@ -38,7 +38,7 @@ pyrS1droguechute = 20,pyrS1mainchute = 21,pyrS12sep = 22,pyroIgniteS2 = 23,pyrS2
 // --- DETECT LAUNCH --- //
 
 bool detectLaunch () {
-    if (accel.y() > 13) {
+    if (accel.y() > 3) {
         Serial.println("Launch detected based on acceleration.");
         return true;
     }
@@ -85,21 +85,45 @@ bool detectBurnout () {
 bool detectApogee() {return is_apogee_reached(&detector);}
 
 void sdwrite() {
-    // Check if the file already exists
-    bool fileExists = SD.exists("flightlog001.txt");
-    
+    Serial.println("Attempting to log data to SD card...");
+
+    // Ensure the file exists; create it if it doesn't
+    if (!SD.exists("flightlog001.txt")) {
+        Serial.println("File flightlog001.txt does not exist. Creating a new file.");
+        File dataFile = SD.open("flightlog001.txt", FILE_WRITE);
+        if (dataFile) {
+            dataFile.println("Temperature,Altitude,Filtered Altitude,Accel Y,Filtered Ay,State"); // Add headers
+            dataFile.close();
+        } else {
+            Serial.println("Error creating flightlog001.txt");
+        }
+    }
+
+    // Open the file for appending
     File dataFile = SD.open("flightlog001.txt", FILE_WRITE);
     if (dataFile) {
-        // If the file doesn't exist, write the header row
-        if (!fileExists) {
-            dataFile.println("Temperature,Raw BMP Altitude,EKF BMP Altitude,Accel Y,EKF Accel Y,System State");
-        }
-        
+        Serial.println("File opened successfully.");
+
         float temperature = bmp.readTemperature();
         float altitude = bmp.readAltitude(1013.25);
         float filteredAltitude = ekf.getFilteredAltitude();
         float filteredAy = ekf.Ay_filtered();
-        
+
+        // Debug prints for data being written
+        Serial.print("Logging data - Temperature: ");
+        Serial.print(temperature, 2);
+        Serial.print(", Altitude: ");
+        Serial.print(altitude, 2);
+        Serial.print(", Filtered Altitude: ");
+        Serial.print(filteredAltitude, 2);
+        Serial.print(", Accel Y: ");
+        Serial.print(accel.y(), 2);
+        Serial.print(", Filtered Ay: ");
+        Serial.print(filteredAy, 2);
+        Serial.print(", State: ");
+        Serial.println(stateNames[currentState]);
+
+        // Write the data
         dataFile.print(temperature, 2);
         dataFile.print(",");
         dataFile.print(altitude, 2);
@@ -113,38 +137,70 @@ void sdwrite() {
         dataFile.println(stateNames[currentState]);
 
         dataFile.close();
-        Serial.println("Data logged.");
+        Serial.println("Data logged to external SD card.");
     } else {
         Serial.println("Error opening flightlog001.txt");
     }
 }
 
-//for teensy sd
-void teensysdwrite (const String& msg) {
-    static bool initialized = false;  // To ensure SD.begin() is called only once
-    if (!initialized) {
-        if (!SD.begin(BUILTIN_SDCARD)) {
-            Serial.println("Built-in SD card initialization failed!");
-            return;
+void teensysdwrite() {
+    Serial.println("Attempting to log data to Teensy SD card...");
+
+    // Ensure the file exists; create it if it doesn't
+    if (!SD.exists("teensylog001.txt")) {
+        Serial.println("File teensylog001.txt does not exist. Creating a new file.");
+        File dataFile = SD.open("teensylog001.txt", FILE_WRITE);
+        if (dataFile) {
+            dataFile.println("Temperature,Altitude,Filtered Altitude,Accel Y,Filtered Ay,State"); // Add headers
+            dataFile.close();
+        } else {
+            Serial.println("Error creating teensylog001.txt");
         }
-        initialized = true;
     }
 
-    File logFile = SD.open("flightLog.txt", FILE_WRITE);
-    if (logFile) {
-        String timeStamp = String(hour()) + ":" + zeropad(minute()) + ":" + zeropad(second());
-        String logEntry = timeStamp + " | " + String(millis()) + " ms | " + msg;
+    // Open the file for appending
+    File dataFile = SD.open("teensylog001.txt", FILE_WRITE);
+    if (dataFile) {
+        Serial.println("Teensy SD file opened successfully.");
 
-        logFile.println(logEntry);
-        logFile.close();
-        Serial.println("Logged to built-in SD card: " + logEntry);
+        float temperature = bmp.readTemperature();
+        float altitude = bmp.readAltitude(1013.25);
+        float filteredAltitude = ekf.getFilteredAltitude();
+        float filteredAy = ekf.Ay_filtered();
+
+        // Debug prints for data being written
+        Serial.print("Logging data - Temperature: ");
+        Serial.print(temperature, 2);
+        Serial.print(", Altitude: ");
+        Serial.print(altitude, 2);
+        Serial.print(", Filtered Altitude: ");
+        Serial.print(filteredAltitude, 2);
+        Serial.print(", Accel Y: ");
+        Serial.print(accel.y(), 2);
+        Serial.print(", Filtered Ay: ");
+        Serial.print(filteredAy, 2);
+        Serial.print(", State: ");
+        Serial.println(stateNames[currentState]);
+
+        // Write the data
+        dataFile.print(temperature, 2);
+        dataFile.print(",");
+        dataFile.print(altitude, 2);
+        dataFile.print(",");
+        dataFile.print(filteredAltitude, 2);
+        dataFile.print(",");
+        dataFile.print(accel.y(), 2);
+        dataFile.print(",");
+        dataFile.print(filteredAy, 2);
+        dataFile.print(",");
+        dataFile.println(stateNames[currentState]);
+
+        dataFile.close();
+        Serial.println("Data logged to Teensy SD card.");
     } else {
-        Serial.println("Failed to open log file on built-in SD card.");
+        Serial.println("Error opening teensylog001.txt");
     }
 }
-
-String zeropad(int num) { return (num < 10 ? "0" : "") + String(num); }
-
 void deployPyro(int pin, const char* message) {
     Serial.println(message);
     digitalWrite(pin, HIGH); 
@@ -208,7 +264,6 @@ void cutoffpower() {
     pinMode(pyroIgniteS2, OUTPUT);
     pinMode(pyrS2droguechute, OUTPUT);
     pinMode(pyrS2mainchute, OUTPUT);
-    teensysdwrite("System shutdown initiated.");
     delay(100); 
     rf95.sleep();  
     digitalWrite(ledblu, LOW);

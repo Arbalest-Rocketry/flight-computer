@@ -20,6 +20,7 @@ enum RocketState {
 };
 
 extern RocketState currentState;
+extern const char* stateNames[];
 
 // Pin definitions
 extern const int 
@@ -51,8 +52,7 @@ void enterLowPowerMode(void (*logData)(), void (*transmitData)());
 bool detectApogee();
 void lowpowermode(void (*sdwrite)(), void (*transmitData)());
 void transmitData();
-String zeropad(int num);
-void teensysdwrite(const String& msg);
+void teensysdwrite();
 void sdwrite();
 
 #endif /* ROCKET_STAGES_H */

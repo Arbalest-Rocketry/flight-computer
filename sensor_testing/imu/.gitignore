@@ -1,0 +1,7 @@
+
+lib/
+\__pycache__/
+*.pyc
+*.uf2
+*.hex
+*.zip

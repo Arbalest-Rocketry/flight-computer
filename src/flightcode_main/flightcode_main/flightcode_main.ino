@@ -21,6 +21,11 @@
 #include "quaternion.h"
 
 // LEDs & pyros
+
+  //-----------------//
+  // Initialize Pins //
+  //-----------------//
+
 const int ledblu = 7, ledgrn = 4, ledred = 0, teensyled = 13;
 ApogeeDetector detector;                     // Apogee detector object
 double altitude_backing_array[WINDOW_SIZE];  // Array to store altitude data for the rolling window
@@ -155,6 +160,24 @@ void setup() {
 
   digitalWrite(ledred, LOW);
 }
+
+
+//------------//
+// Begin Loop //
+//------------//
+//
+//
+//-------------------------------------------------//
+//                                                 //
+//    /////////      //            //////////      //
+//    //      //     //            //        //    //
+//    //      //     //            //        //    //
+//    ////////       //            //////////      //
+//    //      //     //            //              //
+//    //       //    //            //              //
+//    /////////      //////////    //              //
+//                                                 //
+//-------------------------------------------------//
 
 void loop() {
   euler = bno.getVector(Adafruit_BNO055::VECTOR_EULER);

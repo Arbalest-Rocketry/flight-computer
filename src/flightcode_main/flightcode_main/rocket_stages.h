@@ -3,8 +3,9 @@
 
 #include <Adafruit_BMP280.h>
 #include <Adafruit_BNO055.h>
-#include "apogee.h"
+#include <RH_RF95.h>
 #include <SD.h>
+#include "apogee.h"
 #include "quaternion.h"
 
 enum RocketState {
@@ -47,6 +48,8 @@ void igniteupperstagemotors();
 void deployS2drogue();
 void deployS2main();
 bool detectBurnout();
+void cutoffpower();
+void tiltLock();
 bool detectLanding(Adafruit_BMP280 &bmp);
 void enterLowPowerMode(void (*logData)(), void (*transmitData)());
 bool detectApogee();

@@ -3,6 +3,8 @@
 
 #include <Adafruit_BMP280.h>
 #include <Adafruit_BNO055.h>
+#include <RH_RF95.h>
+#include <SD.h>
 #include "apogee.h"
 
 // Pin definitions
@@ -13,6 +15,7 @@ extern bool isLowPowerModeEntered;
 extern ApogeeDetector detector;
 extern Adafruit_BNO055 bno;
 extern imu::Vector<3> accel, euler; 
+extern RH_RF95 rf95;
 
 // Function declarations for rocket stages logic
 bool detectLaunch();

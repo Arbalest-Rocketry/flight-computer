@@ -1,6 +1,6 @@
 /* Arbalest Rocketry
     Version 1.00
-    July, 7th 2024 
+    August, 1st 2024 
     Author: Leroy Musa  */
 
 // Libraries
@@ -69,9 +69,10 @@ const char* stateNames[] = {
 void setup() {
   Serial.begin(9600);
   Wire.begin();
-  Serial1.begin(115200);
-  Serial2.begin(115200);
-  Serial3.begin(115200);
+  
+  /*
+  Serial1.begin(115200); Serial2.begin(115200); Serial3.begin(115200);
+  */
 
   pinMode(ledblu, OUTPUT);
   pinMode(ledgrn, OUTPUT);
@@ -104,7 +105,7 @@ void setup() {
   delay(500);
 
   // Initialize BMP280 Pressure Sensor
-  if (!bmp.begin(0x76)) {
+  if (!bmp.begin(0x76)) { //0x77 is the address for prototyping board
     Serial.println("Could not find a valid BMP280 sensor, check wiring!");
     while (1) {
       digitalWrite(ledred, HIGH);
@@ -159,6 +160,13 @@ void setup() {
   ekf.begin(bmp.readAltitude(1013.25), 0);
 
   digitalWrite(ledred, LOW);
+
+  // Runcam logic 
+  delay(5000);
+  methodOn();
+  delay(130000); // if loop is 1 min, you should get 6 videos, 5 recorded and 1 corrupted
+  methodOff();
+  delay(3000);
 }
 
 
@@ -199,6 +207,7 @@ void loop() {
 
   switch (currentState) {
     case PRE_LAUNCH:
+      tiltLock();
       Serial.println("Checking for launch...");
       Serial.print("Current acceleration (Y): ");
       Serial.println(current_accelY /*accel.y()*/);
@@ -209,6 +218,7 @@ void loop() {
       break;
 
     case LAUNCH_DETECTED:
+      tiltLock();
       Serial.println("Launch detected. Checking for burnout...");
       if (detectBurnout()) {
         deployS1drogue();
@@ -224,6 +234,7 @@ void loop() {
       break;
 
     case FIRST_STAGE_BURNOUT:
+      tiltLock();
       Serial.println("First stage burnout detected. Waiting 10 seconds...");
       if (currentTime - stateEntryTime > 10000) {  // Ensure it waits 10 seconds
         separatestages();
@@ -233,6 +244,7 @@ void loop() {
       break;
 
     case STAGE_SEPARATION:
+      tiltLock();
       Serial.println("Stage separation detected. Waiting 10 seconds...");
       if (currentTime - stateEntryTime > 10000) {  // Ensure it waits 10 seconds
         igniteupperstagemotors();
@@ -242,6 +254,7 @@ void loop() {
       break;
 
     case UPPER_STAGE_IGNITION:
+      tiltLock();
       Serial.println("Upper stage ignition detected. Checking for apogee...");
       if (detectApogee()) {
         deployS2drogue();
@@ -305,4 +318,15 @@ void changeState(RocketState newState) {
   stateEntryTime = millis();
   Serial.print("State changed to ");
   Serial.println(stateNames[newState]);
+}
+
+// mosfet methods for runcams
+void methodOn() {
+  Serial.println("ON");
+  analogWrite(4, 300); // PIN 4! 
+}
+
+void methodOff() {
+  analogWrite(4, 0);
+  Serial.println("OFF");
 }

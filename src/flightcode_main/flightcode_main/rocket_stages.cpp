@@ -35,10 +35,11 @@ const char* stateNames[] = {
 const int 
 pyrS1droguechute = 20,pyrS1mainchute = 21,pyrS12sep = 22,pyroIgniteS2 = 23,pyrS2droguechute = 24,pyrS2mainchute = 25;
 
-// --- DETECT LAUNCH --- //
+#define BNO055_POWER_MODE_LOWPOWER 0x01
 
+// --- DETECT LAUNCH --- //
 bool detectLaunch () {
-    if (accel.y() > 3) {
+    if (ekf.Ay_filtered() > 3) {
         Serial.println("Launch detected based on acceleration.");
         return true;
     }
@@ -71,7 +72,7 @@ bool detectBurnout () {
     static int stage = 1;
 
     float burnoutThreshold = (stage == 1) ? 2.0 : 1.5; 
-    if (accel.y() <= burnoutThreshold) { 
+    if (ekf.Ay_filtered() <= burnoutThreshold) { 
       //y-axis points up from our setup: https://github.com/Arbalest-Rocketry/flight-computer/blob/master/images/electronics_mount_cad_2.png
       //https://github.com/Arbalest-Rocketry/flight-computer/blob/feature/deploy/chutes/images/PCB_front.png
         Serial.print("Burnout detected at stage ");
@@ -272,8 +273,11 @@ void cutoffpower() {
 }
 
 // -- ABORT! -- //
-void abortSystem () {
-    if (abs(euler.y()) > 35 || abs(euler.x()) > 45) {
+void tiltLock() {
+    const float yTiltLimit = 35.0;
+    const float xTiltLimit = 45.0;
+
+    if (abs(euler.y()) > yTiltLimit || abs(euler.x()) > xTiltLimit) {
         Serial.println("Abort detected due to orientation limits.");
         cutoffpower();
     }
@@ -300,12 +304,33 @@ bool detectLanding(Adafruit_BMP280 &bmp) {
 
 // -- LOW POWER MODE -- //
 void lowpowermode (void (*sdwrite)(), void (*transmitData)()) {
+    isLowPowerModeEntered = true;
     Serial.println("Entering low power mode");
 
-    // Set BNO, GPS to low power mode
+    // Set BNO055 to low power mode
+    bno.setMode(OPERATION_MODE_CONFIG);
+    delay(25);
+    // Use the Adafruit_BNO055 method to set power mode
+    bno.enterSuspendMode();  // Assuming this sets the device to a low power state
+    delay(25);
+    bno.setMode(OPERATION_MODE_NDOF);
+    delay(25);
     bno.setExtCrystalUse(false); // Example of setting BNO055 to low power mode
+    Serial.println("BNO055 set to low power mode");
+
+    // Set BMP280 to sleep mode
+    bmp.setSampling(Adafruit_BMP280::MODE_SLEEP);
+    Serial.println("BMP280 set to low power mode");
+
+    // Set LoRa (RFM9x) to sleep mode
+    rf95.sleep();
+    Serial.println("LoRa module set to low power mode");
+
+    // Ensure no open files on SD card to save power
+    Serial.println("Ensure SD card is not accessed to save power");
 
     while (true) {
+        // Call provided functions to transmit and log data
         sdwrite();
         transmitData();
         delay(30000); // Transmit data every 30 seconds

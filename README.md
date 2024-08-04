@@ -24,7 +24,7 @@ This repository contains the code and documentation for the flight computer used
   <img src="images/featherweight_alt_gps.png" alt="Electronics Mount CAD Design" width="80%" style="display: inline-block;">
 </div>
 
-## Electronics Mount CAD Design by `Caelan Babenko`
+## Electronics Mount CAD Design by `Jordan Birley` and `Caelan Babenko`
 The electronics mount CAD design showcases the placement of PCBs within the rocket's fuselage. This design ensures the flight computer's and associated components' proper integration and protection.
 
 <div style="text-align: center;">

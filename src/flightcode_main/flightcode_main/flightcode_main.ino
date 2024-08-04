@@ -1,6 +1,6 @@
 /* Arbalest Rocketry
     Version 1.00
-    August, 1st 2024 
+    August, 4th 2024 
     Author: Leroy Musa  */
 
 // Libraries
@@ -161,12 +161,11 @@ void setup() {
 
   digitalWrite(ledred, LOW);
 
+/*
   // Runcam logic 
   delay(5000);
   methodOn();
-  delay(130000); // if loop is 1 min, you should get 6 videos, 5 recorded and 1 corrupted
-  methodOff();
-  delay(3000);
+  */
 }
 
 
@@ -197,7 +196,15 @@ void loop() {
   ekf.update(current_altitude, current_accelY);
   update_apogee_detector(&detector, current_altitude);
 
+  unsigned long lastRunCamCheck = 0;
   unsigned long currentTime = millis();
+
+  // for wait and intial runcam setup! 
+  // RunCam recording logic
+  if (currentTime - lastRunCamCheck >= 60000) { // Check every 1 minute
+    methodOn(); // Ensure the Runcams are on
+    lastRunCamCheck = currentTime;
+  }
 
   //============================================================//
   //=========         FSM (FINITE STATE MACHINE)       =========//
@@ -318,15 +325,4 @@ void changeState(RocketState newState) {
   stateEntryTime = millis();
   Serial.print("State changed to ");
   Serial.println(stateNames[newState]);
-}
-
-// mosfet methods for runcams
-void methodOn() {
-  Serial.println("ON");
-  analogWrite(4, 300); // PIN 4! 
-}
-
-void methodOff() {
-  analogWrite(4, 0);
-  Serial.println("OFF");
 }

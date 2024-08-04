@@ -2,6 +2,7 @@
 #include <SD.h>
 
 const int chipSelect = 10; // Change this pin if necessary
+const char* filename = "flightlog001.txt"; // Change to actual file name
 
 void setup() {
   // Open serial communications and wait for port to open:
@@ -21,7 +22,7 @@ void setup() {
   Serial.println("Card initialized.");
 
   // Open the file for reading:
-  File dataFile = SD.open("flightlog001.txt");
+  File dataFile = SD.open(filename);
 
   // If the file is available, read it:
   if (dataFile) {

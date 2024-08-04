@@ -57,5 +57,7 @@ void lowpowermode(void (*sdwrite)(), void (*transmitData)());
 void transmitData();
 void teensysdwrite();
 void sdwrite();
+void methodOn();
+void methodOff();
 
 #endif /* ROCKET_STAGES_H */

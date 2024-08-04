@@ -251,6 +251,17 @@ void transmitData () {
     rf95.waitPacketSent();
 }
 
+// mosfet methods for runcams
+void methodOn() {
+  Serial.println("ON");
+  analogWrite(4, 300); // PIN 4! 
+}
+
+void methodOff() {
+  analogWrite(4, 0);
+  Serial.println("OFF");
+}
+
 /*
 Roll (euler.x()): Tilting left/right (like a ship rocking sideways).
 Pitch (euler.y()): Tilting forward/backward (like nodding).
@@ -325,6 +336,10 @@ void lowpowermode (void (*sdwrite)(), void (*transmitData)()) {
     // Set LoRa (RFM9x) to sleep mode
     rf95.sleep();
     Serial.println("LoRa module set to low power mode");
+
+    // Turn off RunCams
+    methodOff();
+    Serial.println("RunCams set to low power mode");
 
     // Ensure no open files on SD card to save power
     Serial.println("Ensure SD card is not accessed to save power");

@@ -83,8 +83,6 @@ bool detectBurnout () {
     return false;
 }
 
-bool detectApogee() {return is_apogee_reached(&detector);}
-
 void sdwrite() {
     Serial.println("Attempting to log data to SD card...");
 

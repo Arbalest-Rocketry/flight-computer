@@ -24,13 +24,14 @@ private:
     void update_gain();
     void adjust_p_cov();
     void adjust_state();
-    void init();
 
-public:
+    // encapsulation!!!
     double measurement[2];
     double current_state[3];
 
+public:
     EKF();   // Constructor
+    void init(); //flexibility!!!
     void update(double barometerAltitude, double accelY);   // Main EKF filter caller
     void begin(double initialBarometerAltitude, double initialaccelY);
     double getFilteredAltitude();  //to get the filtered altitude

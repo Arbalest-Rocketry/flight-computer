@@ -1,6 +1,13 @@
-# The Arbalest Flight Computer Software by `Leroy Musa`
+# The Arbalest Goose 4 Avionics Systems & Flight Computer Software by `Leroy Musa`
 
 This repository contains the code and documentation for the flight computer used for our 2 Stage High Power Rocket set to launch at Launch Canada 2024 
+
+## Flight Computer
+<div style="text-align: center;">
+  <img src="images/Goose 4 Avionics Systems_1.jpg" alt="FC fronts" width="33%" style="display: inline-block; margin-right: 10px;">
+  <img src="images/Goose 4 Avionics System_2.jpg" alt="FC backs" width="33%" style="display: inline-block;">
+  <img src="images/Prototyping_boards_controlling_cams.jpg" alt="Prototyping config w/ cams" width="33%" style="display: inline-block;">
+</div>
 
 <p align="center">
     <img src="images/Aerostructure.png" alt="Image showing me holding our COTS Flight Computer" width="100%" style="display: inline-block; margin-right: 10px;">

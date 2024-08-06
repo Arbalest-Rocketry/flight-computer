@@ -1,6 +1,6 @@
 /* Arbalest Rocketry
     Version 1.00
-    August, 4th 2024 
+    August, 5th 2024 
     Author: Leroy Musa  */
 
 // Libraries
@@ -105,7 +105,7 @@ void setup() {
   delay(500);
 
   // Initialize BMP280 Pressure Sensor
-  if (!bmp.begin(0x76)) { //0x77 is the address for prototyping board
+  if (!bmp.begin(0x76/*0x77*/)) { //0x77 is the address for prototyping board
     Serial.println("Could not find a valid BMP280 sensor, check wiring!");
     while (1) {
       digitalWrite(ledred, HIGH);
@@ -137,21 +137,16 @@ void setup() {
   digitalWrite(ledgrn, HIGH);
 
   // Initialize LoRa Radio
-  if (!rf95.init()) {
+  if (rf95.init()) {
+    Serial.println("LoRa radio initialized!");
+    rf95.setFrequency(RF95_FREQ);
+    rf95.setTxPower(23, false);
+    rf95.setSpreadingFactor(10);
+    rf95.setSignalBandwidth(62.5E3);
+    rf95.setCodingRate4(8);
+  } else {
     Serial.println("LoRa radio init failed");
-    while (1) {
-      digitalWrite(ledred, HIGH);
-      delay(100);
-      digitalWrite(ledred, LOW);
-      delay(100);
-    }
   }
-  Serial.println("LoRa radio initialized!");
-  rf95.setFrequency(RF95_FREQ);
-  rf95.setTxPower(23, false);
-  rf95.setSpreadingFactor(10);
-  rf95.setSignalBandwidth(62.5E3);
-  rf95.setCodingRate4(8);
 
   digitalWrite(ledgrn, LOW);
   digitalWrite(ledred, HIGH);
@@ -160,12 +155,6 @@ void setup() {
   ekf.begin(bmp.readAltitude(1013.25), 0);
 
   digitalWrite(ledred, LOW);
-
-/*
-  // Runcam logic 
-  delay(5000);
-  methodOn();
-  */
 }
 
 
@@ -189,20 +178,22 @@ void setup() {
 void loop() {
   euler = bno.getVector(Adafruit_BNO055::VECTOR_EULER);
   accel = bno.getVector(Adafruit_BNO055::VECTOR_ACCELEROMETER);
-  eulerToQuaternion(euler.x(), euler.y(), euler.z(), &q);
-  normalizeQuaternion(&q);
+
+  // for ekf updates!
   double current_altitude = bmp.readAltitude(1013.25);
   double current_accelY = accel.y();
   ekf.update(current_altitude, current_accelY);
-  update_apogee_detector(&detector, current_altitude);
 
+  // for apogee detector and logging updates!
+  double filtered_altitude = ekf.getFilteredAltitude();
+  double filtered_accelY = ekf.Ay_filtered();
+
+  unsigned long currentTime = millis(); // crucial for state machine and Runcam controls!
   unsigned long lastRunCamCheck = 0;
-  unsigned long currentTime = millis();
 
-  // for wait and intial runcam setup! 
   // RunCam recording logic
   if (currentTime - lastRunCamCheck >= 60000) { // Check every 1 minute
-    methodOn(); // Ensure the Runcams are on
+    methodOn();
     lastRunCamCheck = currentTime;
   }
 
@@ -217,7 +208,7 @@ void loop() {
       tiltLock();
       Serial.println("Checking for launch...");
       Serial.print("Current acceleration (Y): ");
-      Serial.println(current_accelY /*accel.y()*/);
+      Serial.println(filtered_accelY);
       if (detectLaunch()) {
         changeState(LAUNCH_DETECTED);
         Serial.println("State changed to LAUNCH_DETECTED");
@@ -230,7 +221,7 @@ void loop() {
       if (detectBurnout()) {
         deployS1drogue();
         delay(10000);                              // Ensure it waits 10 seconds
-        if (bmp.readAltitude(1013.25) >= 457.2) {  // 1500 feet in meters
+        if (filtered_altitude >= 457.2) {  // 1500 feet in meters
           deployS1main();
         } else {
           Serial.println("Altitude too low for first stage main chute deployment.");
@@ -263,21 +254,23 @@ void loop() {
     case UPPER_STAGE_IGNITION:
       tiltLock();
       Serial.println("Upper stage ignition detected. Checking for apogee...");
-      if (detectApogee()) {
-        deployS2drogue();
-        changeState(APOGEE);
-        Serial.println("State changed to APOGEE");
-      }
+      
+      update_apogee_detector(&detector, filtered_altitude);
+            if (is_apogee_reached(&detector) && !apogeeReached) {
+                apogeeReached = true;
+                deployS2drogue();
+                changeState(APOGEE);
+                Serial.println("State changed to APOGEE");
+            }
       break;
 
     case APOGEE:
       Serial.println("Apogee detected. Checking for main chute deployment...");
       if (!mainChuteDeployed) {
-        double currentAltitude = bmp.readAltitude(1013.25);
         Serial.print("Current altitude: ");
-        Serial.println(currentAltitude);
-        if (currentAltitude <= 500) {      // 500 meters for the second stage deployment window
-          if (currentAltitude >= 457.2) {  // 1500 feet in meters
+        Serial.println(filtered_altitude);
+        if (filtered_altitude <= 500) {      // 500 meters for the second stage deployment window
+          if (filtered_altitude >= 457.2) {  // 1500 feet in meters
             deployS2main();
             mainChuteDeployed = true;
             changeState(MAIN_CHUTE_DEPLOYMENT);
@@ -316,7 +309,7 @@ void loop() {
   Serial.println("Logging and transmitting data...");
   sdwrite();
   teensysdwrite();
-  transmitData();
+  //transmitData();
   Serial.println("Data logged and transmitted.");
 }
 

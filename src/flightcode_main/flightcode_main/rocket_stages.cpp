@@ -37,6 +37,11 @@ pyrS1droguechute = 20,pyrS1mainchute = 21,pyrS12sep = 22,pyroIgniteS2 = 23,pyrS2
 
 #define BNO055_POWER_MODE_LOWPOWER 0x01
 
+// Function prototypes
+void writeDataToSD(const char* filename, float temperature, float altitude, float filteredAltitude, float accelY, float filteredAy, const char* state);
+void logData(const char* filename);
+bool ensureFileExists(const char* filename);
+
 // --- DETECT LAUNCH --- //
 bool detectLaunch () {
     if (ekf.Ay_filtered() > 3) {
@@ -84,122 +89,88 @@ bool detectBurnout () {
 }
 
 void sdwrite() {
-    Serial.println("Attempting to log data to SD card...");
-
-    // Ensure the file exists; create it if it doesn't
-    if (!SD.exists("flightlog001.txt")) {
-        Serial.println("File flightlog001.txt does not exist. Creating a new file.");
-        File dataFile = SD.open("flightlog001.txt", FILE_WRITE);
-        if (dataFile) {
-            dataFile.println("Temperature,Altitude,Filtered Altitude,Accel Y,Filtered Ay,State"); // Add headers
-            dataFile.close();
-        } else {
-            Serial.println("Error creating flightlog001.txt");
-        }
-    }
-
-    // Open the file for appending
-    File dataFile = SD.open("flightlog001.txt", FILE_WRITE);
-    if (dataFile) {
-        Serial.println("File opened successfully.");
-
-        float temperature = bmp.readTemperature();
-        float altitude = bmp.readAltitude(1013.25);
-        float filteredAltitude = ekf.getFilteredAltitude();
-        float filteredAy = ekf.Ay_filtered();
-
-        // Debug prints for data being written
-        Serial.print("Logging data - Temperature: ");
-        Serial.print(temperature, 2);
-        Serial.print(", Altitude: ");
-        Serial.print(altitude, 2);
-        Serial.print(", Filtered Altitude: ");
-        Serial.print(filteredAltitude, 2);
-        Serial.print(", Accel Y: ");
-        Serial.print(accel.y(), 2);
-        Serial.print(", Filtered Ay: ");
-        Serial.print(filteredAy, 2);
-        Serial.print(", State: ");
-        Serial.println(stateNames[currentState]);
-
-        // Write the data
-        dataFile.print(temperature, 2);
-        dataFile.print(",");
-        dataFile.print(altitude, 2);
-        dataFile.print(",");
-        dataFile.print(filteredAltitude, 2);
-        dataFile.print(",");
-        dataFile.print(accel.y(), 2);
-        dataFile.print(",");
-        dataFile.print(filteredAy, 2);
-        dataFile.print(",");
-        dataFile.println(stateNames[currentState]);
-
-        dataFile.close();
-        Serial.println("Data logged to external SD card.");
-    } else {
-        Serial.println("Error opening flightlog001.txt");
-    }
+    Serial.println("Attempting to log data to external SD card...");
+    logData("flightlog001.txt");
 }
 
 void teensysdwrite() {
     Serial.println("Attempting to log data to Teensy SD card...");
+    logData("teensylog001.txt");
+}
 
-    // Ensure the file exists; create it if it doesn't
-    if (!SD.exists("teensylog001.txt")) {
-        Serial.println("File teensylog001.txt does not exist. Creating a new file.");
-        File dataFile = SD.open("teensylog001.txt", FILE_WRITE);
+void logData(const char* filename) {
+    if (ensureFileExists(filename)) {
+        File dataFile = SD.open(filename, FILE_WRITE);
+        if (dataFile) {
+            Serial.println("File opened successfully.");
+
+            float temperature = bmp.readTemperature();
+            float altitude = bmp.readAltitude(1013.25);
+            float filteredAltitude = ekf.getFilteredAltitude();
+            float filteredAy = ekf.Ay_filtered();
+
+            // Debug prints for data being written
+            Serial.print("Logging data - Temperature: ");
+            Serial.print(temperature, 2);
+            Serial.print(", Altitude: ");
+            Serial.print(altitude, 2);
+            Serial.print(", Filtered Altitude: ");
+            Serial.print(filteredAltitude, 2);
+            Serial.print(", Accel Y: ");
+            Serial.print(accel.y(), 2);
+            Serial.print(", Filtered Ay: ");
+            Serial.print(filteredAy, 2);
+            Serial.print(", State: ");
+            Serial.println(stateNames[currentState]);
+
+            // Write the data
+            writeDataToSD(filename, temperature, altitude, filteredAltitude, accel.y(), filteredAy, stateNames[currentState]);
+            
+            dataFile.close();
+            Serial.println("Data logged successfully.");
+        } else {
+            Serial.println("Error opening file for writing.");
+        }
+    }
+}
+
+bool ensureFileExists(const char* filename) {
+    if (!SD.exists(filename)) {
+        Serial.print("File ");
+        Serial.print(filename);
+        Serial.println(" does not exist. Creating a new file.");
+        File dataFile = SD.open(filename, FILE_WRITE);
         if (dataFile) {
             dataFile.println("Temperature,Altitude,Filtered Altitude,Accel Y,Filtered Ay,State"); // Add headers
             dataFile.close();
+            return true;
         } else {
-            Serial.println("Error creating teensylog001.txt");
+            Serial.println("Error creating file.");
+            return false;
         }
     }
+    return true;
+}
 
-    // Open the file for appending
-    File dataFile = SD.open("teensylog001.txt", FILE_WRITE);
+void writeDataToSD(const char* filename, float temperature, float altitude, float filteredAltitude, float accelY, float filteredAy, const char* state) {
+    File dataFile = SD.open(filename, FILE_WRITE);
     if (dataFile) {
-        Serial.println("Teensy SD file opened successfully.");
-
-        float temperature = bmp.readTemperature();
-        float altitude = bmp.readAltitude(1013.25);
-        float filteredAltitude = ekf.getFilteredAltitude();
-        float filteredAy = ekf.Ay_filtered();
-
-        // Debug prints for data being written
-        Serial.print("Logging data - Temperature: ");
-        Serial.print(temperature, 2);
-        Serial.print(", Altitude: ");
-        Serial.print(altitude, 2);
-        Serial.print(", Filtered Altitude: ");
-        Serial.print(filteredAltitude, 2);
-        Serial.print(", Accel Y: ");
-        Serial.print(accel.y(), 2);
-        Serial.print(", Filtered Ay: ");
-        Serial.print(filteredAy, 2);
-        Serial.print(", State: ");
-        Serial.println(stateNames[currentState]);
-
-        // Write the data
         dataFile.print(temperature, 2);
         dataFile.print(",");
         dataFile.print(altitude, 2);
         dataFile.print(",");
         dataFile.print(filteredAltitude, 2);
         dataFile.print(",");
-        dataFile.print(accel.y(), 2);
+        dataFile.print(accelY, 2);
         dataFile.print(",");
         dataFile.print(filteredAy, 2);
         dataFile.print(",");
-        dataFile.println(stateNames[currentState]);
-
-        dataFile.close();
-        Serial.println("Data logged to Teensy SD card.");
+        dataFile.println(state);
     } else {
-        Serial.println("Error opening teensylog001.txt");
+        Serial.println("Error writing data to file.");
     }
 }
+
 void deployPyro(int pin, const char* message) {
     Serial.println(message);
     digitalWrite(pin, HIGH); 

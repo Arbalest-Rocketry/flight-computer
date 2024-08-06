@@ -1,5 +1,5 @@
 /* Arbalest Rocketry
-    Version 1.00
+    Version X
     August, 5th 2024 
     Author: Leroy Musa  */
 
@@ -105,7 +105,7 @@ void setup() {
   delay(500);
 
   // Initialize BMP280 Pressure Sensor
-  if (!bmp.begin(0x76/*0x77*/)) { //0x77 is the address for prototyping board
+  if (!bmp.begin(0x76/*0x77*/)) { //0x77 is the i2c address for prototyping board
     Serial.println("Could not find a valid BMP280 sensor, check wiring!");
     while (1) {
       digitalWrite(ledred, HIGH);
@@ -189,13 +189,7 @@ void loop() {
   double filtered_accelY = ekf.Ay_filtered();
 
   unsigned long currentTime = millis(); // crucial for state machine and Runcam controls!
-  unsigned long lastRunCamCheck = 0;
-
-  // RunCam recording logic
-  if (currentTime - lastRunCamCheck >= 60000) { // Check every 1 minute
-    methodOn();
-    lastRunCamCheck = currentTime;
-  }
+  static bool camerasTurnedOn = false;
 
   //============================================================//
   //=========         FSM (FINITE STATE MACHINE)       =========//
@@ -205,10 +199,20 @@ void loop() {
 
   switch (currentState) {
     case PRE_LAUNCH:
-      tiltLock();
       Serial.println("Checking for launch...");
       Serial.print("Current acceleration (Y): ");
       Serial.println(filtered_accelY);
+
+      // Start recording in PRE LAUNCH stage
+      if (!camerasTurnedOn && currentTime - stateEntryTime >= 30000 /*Can be changed based on how long we are gonna be on the rail before launch*/) {
+        camerasTurnedOn = true;
+        Serial.println("Cameras turned on.");
+      }
+
+      if (camerasTurnedOn) {
+        methodOn();
+      }
+
       if (detectLaunch()) {
         changeState(LAUNCH_DETECTED);
         Serial.println("State changed to LAUNCH_DETECTED");
@@ -216,6 +220,13 @@ void loop() {
       break;
 
     case LAUNCH_DETECTED:
+      // REDUNDANCY! Just incase
+      if (!camerasTurnedOn) {
+        methodOn();
+        camerasTurnedOn = true;
+        Serial.println("Cameras turned on in LAUNCH_DETECTED.");
+      }
+
       tiltLock();
       Serial.println("Launch detected. Checking for burnout...");
       if (detectBurnout()) {
@@ -309,7 +320,7 @@ void loop() {
   Serial.println("Logging and transmitting data...");
   sdwrite();
   teensysdwrite();
-  //transmitData();
+  transmitData();
   Serial.println("Data logged and transmitted.");
 }
 

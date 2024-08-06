@@ -3,6 +3,13 @@
 This repository contains the code and documentation for the flight computer used for our 2 Stage High Power Rocket set to launch at Launch Canada 2024 
 
 ## Flight Computer
+Our flight computer setup includes two unique PCBs for different rocket stages.
+
+Stage 1 ("BLOB"): This PCB handles all operations for the first stage of the flight, ensuring smooth launch and initial ascent.
+
+Stage 2 (Prototyping Board): This board not only manages the second stage but also controls RunCam devices for onboard video recording. Despite its prototyping nature, it functions just as effectively as the Stage 1 computer.
+
+This dual-PCB setup ensures specialized and reliable performance throughout the entire flight.
 <div style="text-align: center;">
   <img src="images/Goose 4 Avionics Systems_1.jpg" alt="FC fronts" width="45%" style="display: inline-block; margin-right: 10px;">
   <img src="images/Goose 4 Avionics System_2.jpg" alt="FC backs" width="45%" style="display: inline-block;">

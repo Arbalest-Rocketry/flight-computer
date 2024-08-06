@@ -19,6 +19,7 @@ pyrS1droguechute = 20,pyrS1mainchute = 21,pyrS12sep = 22,pyroIgniteS2 = 23,pyrS2
 
 // Define the BNO055 object
 Adafruit_BNO055 bno = Adafruit_BNO055(55, 0x28);
+#define BNO055_POWER_MODE_LOWPOWER 0x01
 
 bool detectLaunch () {
     if (accel.y() > 13) {
@@ -81,8 +82,27 @@ void enterLowPowerMode(void (*logData)(), void (*transmitData)()) {
     isLowPowerModeEntered = true;
     Serial.println("Entering low power mode");
 
-    // Set BNO, GPS to low power mode
+    // Set BNO055 to low power mode
+    bno.setMode(OPERATION_MODE_CONFIG);
+    delay(25);
+    // Use the Adafruit_BNO055 method to set power mode
+    bno.enterSuspendMode();  // Assuming this sets the device to a low power state
+    delay(25);
+    bno.setMode(OPERATION_MODE_NDOF);
+    delay(25);
     bno.setExtCrystalUse(false); // Example of setting BNO055 to low power mode
+    Serial.println("BNO055 set to low power mode");
+
+    // Set BMP280 to sleep mode
+    bmp.setSampling(Adafruit_BMP280::MODE_SLEEP);
+    Serial.println("BMP280 set to low power mode");
+
+    // Set LoRa (RFM9x) to sleep mode
+    rf95.sleep();
+    Serial.println("LoRa module set to low power mode");
+
+    // Ensure no open files on SD card to save power
+    Serial.println("Ensure SD card is not accessed to save power");
 
     while (true) {
         // Call provided functions to transmit and log data

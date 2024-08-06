@@ -1,54 +1,22 @@
+//========================================================================================================//
+//                                                                                                        //
+//      This RunCam implementation is designed for serial communication.                                  //
+//      Note: This is not used in the final flight code.                                                  //
+//                                                                                                        //
+//      In the final flight code, we opt for the loop video settings and MOSFET implementation            //
+//      to control the RunCam for more reliable and automated operations during flight. ~ Leroy           //
+//                                                                                                        //
+//========================================================================================================//
+
 #include "runcamsplits.h"
 
-//#define BUFF_SIZE 20
-//#define HWSERIAL Serial1
+#define BUFF_SIZE 20
+#define HWSERIAL Serial1
 
-//uint8_t txBuf[BUFF_SIZE], crc;
-//int recState = 0;
+uint8_t txBuf[BUFF_SIZE], crc;
+int recState = 0;
 
-byte calculateCRC(byte *data, byte len) {
-    byte crc = 0;
-    for (byte i = 0; i < len; i++) {
-        crc ^= data[i];
-        for (byte j = 0; j < 8; j++) {
-            if (crc & 0x80)
-                crc = (crc << 1) ^ 0xD5;  // Polynomial for DVB-S2 CRC-8
-            else
-                crc <<= 1;
-        }
-    }
-    return crc;
-}
 
-void startRec() {
-    byte startCommand[] = {0xCC, 0x03};
-    byte startCRC = calculateCRC(startCommand, sizeof(startCommand));
-    Serial1.write(startCommand, sizeof(startCommand));
-    Serial1.write(startCRC);
-    digitalWrite(13, HIGH);
-    Serial.println("Recording started.");
-}
-
-void stopRec() {
-    byte stopCommand[] = {0xCC, 0x04};
-    byte stopCRC = calculateCRC(stopCommand, sizeof(stopCommand));
-    Serial1.write(stopCommand, sizeof(stopCommand));
-    Serial1.write(stopCRC);
-    digitalWrite(13, LOW);
-    Serial.println("Recording stopped.");
-}
-
-void turnOffCam() {
-    byte turnOffCommand[] = {0xCC, 0x01};
-    byte turnOffCRC = calculateCRC(turnOffCommand, sizeof(turnOffCommand));
-    Serial1.write(turnOffCommand, sizeof(turnOffCommand));
-    Serial1.write(turnOffCRC);
-    digitalWrite(13, HIGH);
-    Serial.println("Camera turned off.");
-}
-
-// secondary logic
-/*
 void setupRunCam() {
     Serial.begin(9600);
     HWSERIAL.begin(115200);
@@ -101,4 +69,3 @@ uint8_t crc8_calc(uint8_t crc, unsigned char a, uint8_t poly) {
     }
     return crc;
 }
-*/

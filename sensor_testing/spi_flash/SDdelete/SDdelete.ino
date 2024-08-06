@@ -3,6 +3,7 @@
 
 // Define the chip select pin for the SD card
 const int chipSelect = BUILTIN_SDCARD; // Change this if using a different SD card module
+const char* filename = "flightlog001.txt"; //Change to actual file name
 
 void setup() {
     Serial.begin(9600);
@@ -25,14 +26,21 @@ void loop() {
 }
 
 void deleteFile() {
-    if (SD.exists("flightlog001.txt")) {
-        Serial.println("Deleting file flightlog001.txt...");
-        if (SD.remove("flightlog001.txt")) {
-            Serial.println("File flightlog001.txt deleted successfully.");
+    if (SD.exists(filename)) {
+        Serial.print("Deleting file ");
+        Serial.print(filename);
+        Serial.println("...");
+        if (SD.remove(filename)) {
+            Serial.print("File ");
+            Serial.print(filename);
+            Serial.println(" deleted successfully.");
         } else {
-            Serial.println("Error deleting flightlog001.txt.");
+            Serial.print("Error deleting ");
+            Serial.println(filename);
         }
     } else {
-        Serial.println("File flightlog001.txt does not exist.");
+        Serial.print("File ");
+        Serial.print(filename);
+        Serial.println(" does not exist.");
     }
 }

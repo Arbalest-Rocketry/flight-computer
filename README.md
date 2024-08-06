@@ -1,10 +1,20 @@
-# The Arbalest Flight Computer Software by `Leroy Musa`
+# The Arbalest Goose 4 Avionics Systems & Flight Computer Software by `Leroy Musa`
 
 This repository contains the code and documentation for the flight computer used for our 2 Stage High Power Rocket set to launch at Launch Canada 2024 
 
-<p align="center">
-    <img src="images/Aerostructure.png" alt="Image showing me holding our COTS Flight Computer" width="100%" style="display: inline-block; margin-right: 10px;">
-</p>
+## Flight Computer
+Our flight computer setup includes two unique PCBs for different rocket stages.
+
+Stage 1 ("BLOB"): This PCB handles all operations for the first stage of the flight, ensuring smooth launch and initial ascent.
+
+Stage 2 (Prototyping Board): This board not only manages the second stage but also controls RunCam devices for onboard video recording. Despite its prototyping nature, it functions just as effectively as the Stage 1 computer.
+
+This dual-PCB setup ensures specialized and reliable performance throughout the entire flight.
+<div style="text-align: center;">
+  <img src="images/Goose 4 Avionics Systems_1.jpg" alt="FC fronts" width="45%" style="display: inline-block; margin-right: 10px;">
+  <img src="images/Goose 4 Avionics System_2.jpg" alt="FC backs" width="45%" style="display: inline-block;">
+  <img src="images/Prototyping_boards_controlling_cams.jpg" alt="Prototyping config w/ cams" width="90%" style="display: inline-block;">
+</div>
 
 ## Components
 - Microcontroller: [Teensy 4.1](https://www.pjrc.com/store/teensy41.html)
@@ -24,7 +34,7 @@ This repository contains the code and documentation for the flight computer used
   <img src="images/featherweight_alt_gps.png" alt="Electronics Mount CAD Design" width="80%" style="display: inline-block;">
 </div>
 
-## Electronics Mount CAD Design by `Caelan Babenko`
+## Avionics Bay Design by `Jordan Birley` and `Caelan Babenko`
 The electronics mount CAD design showcases the placement of PCBs within the rocket's fuselage. This design ensures the flight computer's and associated components' proper integration and protection.
 
 <div style="text-align: center;">
@@ -145,40 +155,6 @@ The flight computer controls four pyro channels for parachute deployment.
 ## Conclusion
 
 The integration of the Arbalest Flight Computer with the LiPo batteries, screw switch, Runcam Split 4 cameras, and pyro channels provides a robust system for managing various flight operations, including parachute deployment. 
-
-# Connecting Runcam Split 4 Cameras to the Testing Setup
-
-To simulate real-flight conditions and verify the functionality of the Runcam Split 4 cameras, a direct connection to the testing setup is essential. This section outlines the straightforward process of integrating Runcam Split 4 cameras into your testing environment for video recording and analysis.
-
-<div style="text-align: center;">
-  <img src="images/RunCamSplit4_compared_to_palm.jpg" alt="RCS4" width="25%" style="display: inline-block;">
-  <img src="images/RunCamSplit4_isolated.jpg" alt="RCS4" width="33.3%" style="display: inline-block;">
-  <img src="images/runcamsplit4_setup.jpg" alt="RCS4" width="25%" style="display: inline-block;">
-</div>
-
-### Step 1: Gather Necessary Components
-
-Ensure you have the following components ready:
-
-- Runcam Split 4 camera module
-- Teensy 4.1 microcontroller board
-- Jumper wires
-- Soldering equipment
-
-### Step 2: Physical Connection
-
-1. **Connect Power**: Use jumper wires to connect the power source to the Teensy 4.1 to provide power to the entire setup.
-2. **Connect Camera**: Solder jumper wires onto the RX (receive) and TX (transmit) pins of the Runcam Split 4 camera. Then, you can connect the RX wire to the TX pin and the TX wire to the RX pin on the Teensy 4.1 for video data transmission.
-3. **Ground Connection**: Connect another jumper wire from the ground (GND) pin of the Runcam Split 4 to any ground pin on Teensy 4.1 to complete the circuit.
-
-### Runcam Split Command list
-| action id                                 | value   | description                                |
-|-------------------------------------------|---------|--------------------------------------------|
-| `rcdevice_protocol_simulate_wifi_btn`     | 0x00    | simulation click the wi-fi button          |
-| `rcdevice_protocol_simulate_power_btn`    | 0x01    | simulation click the power button          |
-| `rcdevice_protocol_change_mode`           | 0x02    | switch the camera mode                     |
-| `rcdevice_protocol_change_start_recording`| 0x03    | control the camera to start recording      |
-| `rcdevice_protocol_change_stop_recording` | 0x04    | control the camera to stop recording       |
 
 # Transceiver Test w/ RC plane
 <div style="text-align: center;">

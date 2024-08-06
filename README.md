@@ -16,10 +16,6 @@ This dual-PCB setup ensures specialized and reliable performance throughout the 
   <img src="images/Prototyping_boards_controlling_cams.jpg" alt="Prototyping config w/ cams" width="90%" style="display: inline-block;">
 </div>
 
-<p align="center">
-    <img src="images/Aerostructure.png" alt="Image showing me holding our COTS Flight Computer" width="100%" style="display: inline-block; margin-right: 10px;">
-</p>
-
 ## Components
 - Microcontroller: [Teensy 4.1](https://www.pjrc.com/store/teensy41.html)
 - Sensors:

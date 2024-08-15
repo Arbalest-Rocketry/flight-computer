@@ -319,7 +319,6 @@ void loop() {
   // Log and transmit data
   Serial.println("Logging and transmitting data...");
   sdwrite();
-  teensysdwrite();
   transmitData();
   Serial.println("Data logged and transmitted.");
 }

@@ -55,8 +55,11 @@ void enterLowPowerMode(void (*logData)(), void (*transmitData)());
 bool detectApogee();
 void lowpowermode(void (*sdwrite)(), void (*transmitData)());
 void transmitData();
-void teensysdwrite();
 void sdwrite();
+void writeDataToSD(File &dataFile, float temperature, float altitude, float filteredAltitude, float accelY, float filteredAy, const char* state);
+void logData(const char* filename);
+bool ensureFileExists(const char* filename);
+String generateNewFileName(const char* baseName);
 void methodOn();
 void methodOff();
 

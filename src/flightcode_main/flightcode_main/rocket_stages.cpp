@@ -37,14 +37,9 @@ pyrS1droguechute = 20,pyrS1mainchute = 21,pyrS12sep = 22,pyroIgniteS2 = 23,pyrS2
 
 #define BNO055_POWER_MODE_LOWPOWER 0x01
 
-// Function prototypes
-void writeDataToSD(const char* filename, float temperature, float altitude, float filteredAltitude, float accelY, float filteredAy, const char* state);
-void logData(const char* filename);
-bool ensureFileExists(const char* filename);
-
 // --- DETECT LAUNCH --- //
 bool detectLaunch () {
-    if (ekf.Ay_filtered() > 3) {
+    if (ekf.Ay_filtered() > 13) {
         Serial.println("Launch detected based on acceleration.");
         return true;
     }
@@ -89,13 +84,14 @@ bool detectBurnout () {
 }
 
 void sdwrite() {
-    Serial.println("Attempting to log data to external SD card...");
-    logData("flightlog001.txt");
-}
+    static String currentFileName = ""; // Static to retain across function calls
+    if (currentFileName == "") {
+        currentFileName = generateNewFileName("flightlog");
+        Serial.println("New file created: " + currentFileName);
+    }
 
-void teensysdwrite() {
-    Serial.println("Attempting to log data to Teensy SD card...");
-    logData("teensylog001.txt");
+    Serial.println("Attempting to log data to SD card...");
+    logData(currentFileName.c_str());
 }
 
 void logData(const char* filename) {
@@ -103,29 +99,15 @@ void logData(const char* filename) {
         File dataFile = SD.open(filename, FILE_WRITE);
         if (dataFile) {
             Serial.println("File opened successfully.");
-
+            
             float temperature = bmp.readTemperature();
             float altitude = bmp.readAltitude(1013.25);
             float filteredAltitude = ekf.getFilteredAltitude();
             float filteredAy = ekf.Ay_filtered();
 
-            // Debug prints for data being written
-            Serial.print("Logging data - Temperature: ");
-            Serial.print(temperature, 2);
-            Serial.print(", Altitude: ");
-            Serial.print(altitude, 2);
-            Serial.print(", Filtered Altitude: ");
-            Serial.print(filteredAltitude, 2);
-            Serial.print(", Accel Y: ");
-            Serial.print(accel.y(), 2);
-            Serial.print(", Filtered Ay: ");
-            Serial.print(filteredAy, 2);
-            Serial.print(", State: ");
-            Serial.println(stateNames[currentState]);
-
             // Write the data
-            writeDataToSD(filename, temperature, altitude, filteredAltitude, accel.y(), filteredAy, stateNames[currentState]);
-            
+            writeDataToSD(dataFile, temperature, altitude, filteredAltitude, accel.y(), filteredAy, stateNames[currentState]);
+
             dataFile.close();
             Serial.println("Data logged successfully.");
         } else {
@@ -141,7 +123,7 @@ bool ensureFileExists(const char* filename) {
         Serial.println(" does not exist. Creating a new file.");
         File dataFile = SD.open(filename, FILE_WRITE);
         if (dataFile) {
-            dataFile.println("Temperature,Altitude,Filtered Altitude,Accel Y,Filtered Ay,State"); // Add headers
+            dataFile.println("Timestamp,Temp,Alt,FAlt,AccelY,FAccelY,State");
             dataFile.close();
             return true;
         } else {
@@ -152,9 +134,12 @@ bool ensureFileExists(const char* filename) {
     return true;
 }
 
-void writeDataToSD(const char* filename, float temperature, float altitude, float filteredAltitude, float accelY, float filteredAy, const char* state) {
-    File dataFile = SD.open(filename, FILE_WRITE);
+void writeDataToSD(File &dataFile, float temperature, float altitude, float filteredAltitude, float accelY, float filteredAy, const char* state) {
+    // Ensure the dataFile is open before writing
     if (dataFile) {
+        unsigned long timestamp = millis();
+        dataFile.print(timestamp);
+        dataFile.print(",");
         dataFile.print(temperature, 2);
         dataFile.print(",");
         dataFile.print(altitude, 2);
@@ -169,6 +154,17 @@ void writeDataToSD(const char* filename, float temperature, float altitude, floa
     } else {
         Serial.println("Error writing data to file.");
     }
+}
+
+String generateNewFileName(const char* baseName) {
+    String fileName;
+    for (uint8_t i = 1; i < 1000; i++) {
+        fileName = String(baseName) + String(i) + ".txt";
+        if (!SD.exists(fileName.c_str())) {
+            break;
+        }
+    }
+    return fileName;
 }
 
 void deployPyro(int pin, const char* message) {
@@ -223,11 +219,13 @@ void transmitData () {
 // mosfet methods for runcams
 void methodOn() {
   Serial.println("ON");
-  analogWrite(4, 300); // PIN 4! 
+  analogWrite(4, 300); // PIN 4!
+  analogWrite(32, 300); // PIN 32! 
 }
 
 void methodOff() {
   analogWrite(4, 0);
+  analogWrite(32, 0); 
   Serial.println("OFF");
 }
 
@@ -254,8 +252,8 @@ void cutoffpower() {
 
 // -- ABORT! -- //
 void tiltLock() {
-    const float yTiltLimit = 35.0;
-    const float xTiltLimit = 45.0;
+    const float yTiltLimit = 75.0;
+    const float xTiltLimit = 85.0;
 
     if (abs(euler.y()) > yTiltLimit || abs(euler.x()) > xTiltLimit) {
         Serial.println("Abort detected due to orientation limits.");

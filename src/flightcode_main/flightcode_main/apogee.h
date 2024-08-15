@@ -6,7 +6,7 @@
 
 #define WINDOW_SIZE 20
 // Number of consecutive decreases to confirm apogee
-#define DECREASE_THRESHOLD /*5*/ 30 // for LC
+#define DECREASE_THRESHOLD /*5*/ 12 // for LC
 extern bool apogeeReached;
 extern Adafruit_BMP280 bmp; // BMP280 object
 

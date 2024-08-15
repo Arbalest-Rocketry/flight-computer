@@ -1,6 +1,6 @@
 /* Arbalest Rocketry
     Version X
-    August, 5th 2024 
+    August, 15th 2024 
     Author: Leroy Musa  */
 
 // Libraries
@@ -131,6 +131,7 @@ void setup() {
       delay(300);
     }
   }
+  axisRemapping();
   Serial.println("BNO055 initialized!");
 
   digitalWrite(ledblu, LOW);
@@ -190,7 +191,7 @@ void loop() {
 
   unsigned long currentTime = millis(); // crucial for state machine and Runcam controls!
   static bool camerasTurnedOn = false;
-
+  
   //============================================================//
   //=========         FSM (FINITE STATE MACHINE)       =========//
   //============================================================//
@@ -199,6 +200,7 @@ void loop() {
 
   switch (currentState) {
     case PRE_LAUNCH:
+      sdwrite();
       Serial.println("Checking for launch...");
       Serial.print("Current acceleration (Y): ");
       Serial.println(filtered_accelY);
@@ -220,18 +222,18 @@ void loop() {
       break;
 
     case LAUNCH_DETECTED:
+      sdwrite();
       // REDUNDANCY! Just incase
       if (!camerasTurnedOn) {
         methodOn();
         camerasTurnedOn = true;
         Serial.println("Cameras turned on in LAUNCH_DETECTED.");
       }
-
       tiltLock();
       Serial.println("Launch detected. Checking for burnout...");
       if (detectBurnout()) {
         deployS1drogue();
-        delay(10000);                              // Ensure it waits 10 seconds
+        delay(10000);                      // Ensure it waits 10 seconds
         if (filtered_altitude >= 457.2) {  // 1500 feet in meters
           deployS1main();
         } else {
@@ -243,9 +245,10 @@ void loop() {
       break;
 
     case FIRST_STAGE_BURNOUT:
+      sdwrite();
       tiltLock();
       Serial.println("First stage burnout detected. Waiting 10 seconds...");
-      if (currentTime - stateEntryTime > 10000) {  // Ensure it waits 10 seconds
+      if (currentTime - stateEntryTime > 10000) {
         separatestages();
         changeState(STAGE_SEPARATION);
         Serial.println("State changed to STAGE_SEPARATION");
@@ -253,9 +256,10 @@ void loop() {
       break;
 
     case STAGE_SEPARATION:
+      sdwrite();
       tiltLock();
       Serial.println("Stage separation detected. Waiting 10 seconds...");
-      if (currentTime - stateEntryTime > 10000) {  // Ensure it waits 10 seconds
+      if (currentTime - stateEntryTime > 10000) {
         igniteupperstagemotors();
         changeState(UPPER_STAGE_IGNITION);
         Serial.println("State changed to UPPER_STAGE_IGNITION");
@@ -263,9 +267,9 @@ void loop() {
       break;
 
     case UPPER_STAGE_IGNITION:
+      sdwrite();
       tiltLock();
-      Serial.println("Upper stage ignition detected. Checking for apogee...");
-      
+      Serial.println("Upper stage ignition detected. Checking for apogee..."); 
       update_apogee_detector(&detector, filtered_altitude);
             if (is_apogee_reached(&detector) && !apogeeReached) {
                 apogeeReached = true;
@@ -276,6 +280,7 @@ void loop() {
       break;
 
     case APOGEE:
+      sdwrite();
       Serial.println("Apogee detected. Checking for main chute deployment...");
       if (!mainChuteDeployed) {
         Serial.print("Current altitude: ");
@@ -294,6 +299,7 @@ void loop() {
       break;
 
     case MAIN_CHUTE_DEPLOYMENT:
+      sdwrite();
       Serial.println("Main chute deployed. Checking for landing...");
       if (detectLanding(bmp)) {
         changeState(LANDING_DETECTED);
@@ -302,6 +308,7 @@ void loop() {
       break;
 
     case LANDING_DETECTED:
+      sdwrite();
       Serial.println("Landing detected. Entering low power mode...");
       lowpowermode(sdwrite, transmitData);
       changeState(LOW_POWER_MODE);
@@ -309,18 +316,13 @@ void loop() {
       break;
 
     case LOW_POWER_MODE:
+      sdwrite();
       Serial.println("Low power mode active.");
-      // Perform low power mode operations
       break;
   }
-
   delay(100);  // Prevent excess polling
-
-  // Log and transmit data
-  Serial.println("Logging and transmitting data...");
   sdwrite();
-  transmitData();
-  Serial.println("Data logged and transmitted.");
+  transmitdata();
 }
 
 void changeState(RocketState newState) {

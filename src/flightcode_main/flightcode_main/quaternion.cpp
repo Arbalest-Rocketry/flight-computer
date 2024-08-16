@@ -1,19 +1,20 @@
 #include "quaternion.h"
 #include <math.h>
 
-
 void eulerToQuaternion(float yaw, float pitch, float roll, Quaternion* q) {
-    float cy = cos(yaw * 0.5);
-    float sy = sin(yaw * 0.5);
-    float cp = cos(pitch * 0.5);
-    float sp = sin(pitch * 0.5);
-    float cr = cos(roll * 0.5);
-    float sr = sin(roll * 0.5);
+    float cy = cos(yaw * 0.5f);
+    float sy = sin(yaw * 0.5f);
+    float cp = cos(pitch * 0.5f);
+    float sp = sin(pitch * 0.5f);
+    float cr = cos(roll * 0.5f);
+    float sr = sin(roll * 0.5f);
 
     q->w = cy * cp * cr + sy * sp * sr;
     q->x = cy * cp * sr - sy * sp * cr;
     q->y = sy * cp * sr + cy * sp * cr;
     q->z = sy * cp * cr - cy * sp * sr;
+
+    normalizeQuaternion(q);
 }
 
 void normalizeQuaternion(Quaternion* q) {
@@ -37,13 +38,14 @@ void quaternionToMatrix(const Quaternion* q, float matrix[3][3]) {
     float xx = q->x * q->x;
     float yy = q->y * q->y;
     float zz = q->z * q->z;
+
     matrix[0][0] = ww + xx - yy - zz;
-    matrix[0][1] = 2 * (q->x * q->y - q->w * q->z);
-    matrix[0][2] = 2 * (q->x * q->z + q->w * q->y);
-    matrix[1][0] = 2 * (q->x * q->y + q->w * q->z);
+    matrix[0][1] = 2.0f * (q->x * q->y - q->w * q->z);
+    matrix[0][2] = 2.0f * (q->x * q->z + q->w * q->y);
+    matrix[1][0] = 2.0f * (q->x * q->y + q->w * q->z);
     matrix[1][1] = ww - xx + yy - zz;
-    matrix[1][2] = 2 * (q->y * q->z - q->w * q->x);
-    matrix[2][0] = 2 * (q->x * q->z - q->w * q->y);
-    matrix[2][1] = 2 * (q->y * q->z + q->w * q->x);
+    matrix[1][2] = 2.0f * (q->y * q->z - q->w * q->x);
+    matrix[2][0] = 2.0f * (q->x * q->z - q->w * q->y);
+    matrix[2][1] = 2.0f * (q->y * q->z + q->w * q->x);
     matrix[2][2] = ww - xx - yy + zz;
 }

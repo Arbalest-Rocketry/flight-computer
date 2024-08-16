@@ -322,7 +322,7 @@ void loop() {
   }
   delay(100);  // Prevent excess polling
   sdwrite();
-  transmitdata();
+  transmitData();
 }
 
 void changeState(RocketState newState) {

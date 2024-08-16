@@ -53,7 +53,6 @@ bool detectBurnout();
 void cutoffpower();
 void tiltLock();
 bool detectLanding(Adafruit_BMP280 &bmp);
-void enterLowPowerMode(void (*logData)(), void (*transmitData)());
 bool detectApogee();
 void lowpowermode(void (*sdwrite)(), void (*transmitData)());
 void transmitData();

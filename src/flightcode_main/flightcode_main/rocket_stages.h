@@ -27,6 +27,8 @@ extern const char* stateNames[];
 extern const int 
 pyrS1droguechute,pyrS1mainchute,pyrS12sep,pyroIgniteS2,pyrS2droguechute,pyrS2mainchute;
 
+extern const unsigned long boosterBurpTime;
+extern bool boosterBurpDetected, boosterBurnoutCheck;
 extern bool isLowPowerModeEntered;
 extern ApogeeDetector detector;
 extern Adafruit_BNO055 bno; extern Adafruit_BMP280 bmp;
@@ -51,7 +53,6 @@ bool detectBurnout();
 void cutoffpower();
 void tiltLock();
 bool detectLanding(Adafruit_BMP280 &bmp);
-void enterLowPowerMode(void (*logData)(), void (*transmitData)());
 bool detectApogee();
 void lowpowermode(void (*sdwrite)(), void (*transmitData)());
 void transmitData();
@@ -62,5 +63,6 @@ bool ensureFileExists(const char* filename);
 String generateNewFileName(const char* baseName);
 void methodOn();
 void methodOff();
+void axisRemapping();
 
 #endif /* ROCKET_STAGES_H */

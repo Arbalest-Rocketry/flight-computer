@@ -35,52 +35,92 @@ const char* stateNames[] = {
 const int 
 pyrS1droguechute = 20,pyrS1mainchute = 21,pyrS12sep = 22,pyroIgniteS2 = 23,pyrS2droguechute = 24,pyrS2mainchute = 25;
 
+const unsigned long boosterBurpTime = 1000;
+bool boosterBurpDetected, boosterBurnoutCheck = false;
 #define BNO055_POWER_MODE_LOWPOWER 0x01
+#define REMAP_CONFIG_P0 0x21
+#define REMAP_SIGN_P0 0x01
 
 // --- DETECT LAUNCH --- //
 bool detectLaunch () {
-    if (ekf.Ay_filtered() > 13) {
+    if (ekf.Ay_filtered() > 7.0) {
         Serial.println("Launch detected based on acceleration.");
         return true;
     }
     return false;
 }
 
-// -- BURNOUT -- //
+// -- BURNOUT DETECTION -- //
 
-/* First Stage: The first stage of a rocket generally 
- * provides the primary thrust necessary for liftoff and 
- * to overcome the earth's gravitational pull. It is usually
- * the most powerful and has a high thrust-to-weight ratio. 
- * The cutoff or "burnout" might be more abrupt, with a 
- * noticeable and rapid decrease in acceleration, hence a 
- * higher threshold like 2.0. This value indicates a clear 
- * drop but still within a range where the engines are
- * pushing significantly.
+/* The burnout detection logic is carefully designed to figure out when a rocket stage 
+   has burned through its fuel and isn’t generating enough thrust anymore, so we can smoothly 
+   move on to the next stage.
 
- * Second Stage: Upper stages are typically optimized 
- * for operation in thinner atmospheres or vacuum conditions 
- * and might have lower thrust engines that burn longer but 
- * with less intensity compared to the first stage. The change 
- * in acceleration at burnout might be less pronounced or more 
- * gradual, justifying a lower threshold like 1.5. This value 
- * might reflect a more subtle decrease in acceleration, 
- * appropriate for the operational characteristics 
- * of these stages.
-*/
-bool detectBurnout () {
+ * First Stage: The first stage is all about getting the rocket off the ground and pushing 
+   it through the thickest part of the atmosphere. It has a lot of power, so when the engines 
+   cut off, you’ll see a big drop in acceleration. That’s why we use a higher threshold of 2.0 
+   to detect when the first stage has burned out—it's a pretty clear sign that the engines have 
+   done their job and it’s time to switch gears.
+
+ * Second Stage: The second stage is designed for the upper atmosphere or space, where it doesn’t 
+   need as much power. The engines burn a bit longer but not as intensely, so the drop in 
+   acceleration when this stage burns out is more subtle. That’s why we use a lower threshold of 1.5 
+   to catch that change and confirm the second stage has done its part.
+
+ * Booster Burp: After we detect burnout, there’s a little safety check we do called a "booster burp" 
+   check. This helps us make sure there aren’t any little bursts of thrust left that could mess up 
+   the transition to the next stage. We keep an eye on the acceleration for a short period (called 
+   boosterBurpTime). If we see a spike above 1.0 during this time, we know the engines aren’t quite 
+   done yet, so we reset and wait. This way, we only move on when we’re really sure the burnout is 
+   complete.
+
+ * Stage Awareness: The whole system is smart enough to know which stage it’s in, so it adjusts its 
+   burnout detection based on whether it’s dealing with the first or second stage. This makes sure 
+   we’re using the right criteria for the right part of the flight, so the transitions happen 
+   exactly when they’re supposed to.
+ */
+
+bool detectBurnout() {
     static int stage = 1;
+    static bool boosterBurpDetected = false;
+    static unsigned long boosterBurnoutTime = 0;
 
-    float burnoutThreshold = (stage == 1) ? 2.0 : 1.5; 
-    if (ekf.Ay_filtered() <= burnoutThreshold) { 
-      //y-axis points up from our setup: https://github.com/Arbalest-Rocketry/flight-computer/blob/master/images/electronics_mount_cad_2.png
-      //https://github.com/Arbalest-Rocketry/flight-computer/blob/feature/deploy/chutes/images/PCB_front.png
-        Serial.print("Burnout detected at stage ");
-        Serial.println(stage);
-        stage++; 
-        return true;
+    // Define the burnout threshold based on the current stage
+    float burnoutThreshold = (stage == 1) ? 2.0 : 1.5;
+    if (ekf.Ay_filtered() <= burnoutThreshold) {
+      //Last-minute mod: y-axis points down from our setup; it's now inverted!
+        if (!boosterBurpDetected) {
+            Serial.print("Burnout detected at stage ");
+            Serial.println(stage);
+            stage++;
+            boosterBurnoutTime = millis();
+            boosterBurpDetected = true;
+
+            return true;
+        } else if (millis() - boosterBurnoutTime <= boosterBurpTime) {
+            if (ekf.Ay_filtered() > 1.0) {
+                Serial.println("Booster burp detected. Resetting stage.");
+                boosterBurpDetected = false;
+                stage--; 
+                return false;  
+            }
+        } else {
+            boosterBurpDetected = false;
+            return true;
+        }
     }
     return false;
+}
+
+// -- AXIS REMAPPING -- //
+void axisRemapping() {
+    bno.setMode(OPERATION_MODE_CONFIG); //config mode!
+    delay(25);
+    bno.setAxisRemap(REMAP_CONFIG_P0); 
+    bno.setAxisSign(REMAP_SIGN_P0);    
+    bno.setMode(OPERATION_MODE_IMUPLUS); //imu mode!
+    delay(25);
+    Serial.println("Axis remapping done!");
 }
 
 void sdwrite() {
@@ -89,7 +129,6 @@ void sdwrite() {
         currentFileName = generateNewFileName("flightlog");
         Serial.println("New file created: " + currentFileName);
     }
-
     Serial.println("Attempting to log data to SD card...");
     logData(currentFileName.c_str());
 }
@@ -99,7 +138,6 @@ void logData(const char* filename) {
         File dataFile = SD.open(filename, FILE_WRITE);
         if (dataFile) {
             Serial.println("File opened successfully.");
-            
             float temperature = bmp.readTemperature();
             float altitude = bmp.readAltitude(1013.25);
             float filteredAltitude = ekf.getFilteredAltitude();
@@ -254,7 +292,6 @@ void cutoffpower() {
 void tiltLock() {
     const float yTiltLimit = 75.0;
     const float xTiltLimit = 85.0;
-
     if (abs(euler.y()) > yTiltLimit || abs(euler.x()) > xTiltLimit) {
         Serial.println("Abort detected due to orientation limits.");
         cutoffpower();
@@ -266,8 +303,6 @@ bool detectLanding(Adafruit_BMP280 &bmp) {
     static double lastAltitude = 0;
     double currentAltitude = bmp.readAltitude(1013.25);
     static unsigned long landedTime = millis();
-
-    // Check if altitude remains constant (±0.1 meter) for more than 5 seconds
     if (abs(currentAltitude - lastAltitude) < 0.1) {
         if (millis() - landedTime > 5000) {
             Serial.println("Landing detected");
@@ -284,35 +319,22 @@ bool detectLanding(Adafruit_BMP280 &bmp) {
 void lowpowermode (void (*sdwrite)(), void (*transmitData)()) {
     isLowPowerModeEntered = true;
     Serial.println("Entering low power mode");
-
-    // Set BNO055 to low power mode
     bno.setMode(OPERATION_MODE_CONFIG);
     delay(25);
-    // Use the Adafruit_BNO055 method to set power mode
-    bno.enterSuspendMode();  // Assuming this sets the device to a low power state
+    bno.enterSuspendMode();
     delay(25);
     bno.setMode(OPERATION_MODE_NDOF);
     delay(25);
-    bno.setExtCrystalUse(false); // Example of setting BNO055 to low power mode
+    bno.setExtCrystalUse(false);
     Serial.println("BNO055 set to low power mode");
-
-    // Set BMP280 to sleep mode
     bmp.setSampling(Adafruit_BMP280::MODE_SLEEP);
     Serial.println("BMP280 set to low power mode");
-
-    // Set LoRa (RFM9x) to sleep mode
     rf95.sleep();
     Serial.println("LoRa module set to low power mode");
-
-    // Turn off RunCams
     methodOff();
     Serial.println("RunCams set to low power mode");
-
-    // Ensure no open files on SD card to save power
     Serial.println("Ensure SD card is not accessed to save power");
-
     while (true) {
-        // Call provided functions to transmit and log data
         sdwrite();
         transmitData();
         delay(30000); // Transmit data every 30 seconds

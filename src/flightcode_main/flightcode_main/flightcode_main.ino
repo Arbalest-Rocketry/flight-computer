@@ -177,6 +177,7 @@ void setup() {
 //-------------------------------------------------//
 
 void loop() {
+  transmitData();
   euler = bno.getVector(Adafruit_BNO055::VECTOR_EULER);
   accel = bno.getVector(Adafruit_BNO055::VECTOR_ACCELEROMETER);
 
@@ -200,7 +201,7 @@ void loop() {
 
   switch (currentState) {
     case PRE_LAUNCH:
-      sdwrite();
+      sdwrite();   transmitData();
       Serial.println("Checking for launch...");
       Serial.print("Current acceleration (Y): ");
       Serial.println(filtered_accelY);
@@ -222,7 +223,7 @@ void loop() {
       break;
 
     case LAUNCH_DETECTED:
-      sdwrite();
+      sdwrite();   transmitData();
       // REDUNDANCY! Just incase
       if (!camerasTurnedOn) {
         methodOn();
@@ -245,7 +246,7 @@ void loop() {
       break;
 
     case FIRST_STAGE_BURNOUT:
-      sdwrite();
+      sdwrite();   transmitData();
       tiltLock();
       Serial.println("First stage burnout detected. Waiting 10 seconds...");
       if (currentTime - stateEntryTime > 10000) {
@@ -256,7 +257,7 @@ void loop() {
       break;
 
     case STAGE_SEPARATION:
-      sdwrite();
+      sdwrite();   transmitData();
       tiltLock();
       Serial.println("Stage separation detected. Waiting 10 seconds...");
       if (currentTime - stateEntryTime > 10000) {
@@ -267,7 +268,7 @@ void loop() {
       break;
 
     case UPPER_STAGE_IGNITION:
-      sdwrite();
+      sdwrite();   transmitData();
       tiltLock();
       Serial.println("Upper stage ignition detected. Checking for apogee..."); 
       update_apogee_detector(&detector, filtered_altitude);
@@ -280,7 +281,7 @@ void loop() {
       break;
 
     case APOGEE:
-      sdwrite();
+      sdwrite();   transmitData();
       Serial.println("Apogee detected. Checking for main chute deployment...");
       if (!mainChuteDeployed) {
         Serial.print("Current altitude: ");
@@ -299,7 +300,7 @@ void loop() {
       break;
 
     case MAIN_CHUTE_DEPLOYMENT:
-      sdwrite();
+      sdwrite();   transmitData();
       Serial.println("Main chute deployed. Checking for landing...");
       if (detectLanding(bmp)) {
         changeState(LANDING_DETECTED);
@@ -308,7 +309,7 @@ void loop() {
       break;
 
     case LANDING_DETECTED:
-      sdwrite();
+      sdwrite();   transmitData();
       Serial.println("Landing detected. Entering low power mode...");
       lowpowermode(sdwrite, transmitData);
       changeState(LOW_POWER_MODE);
@@ -316,7 +317,6 @@ void loop() {
       break;
 
     case LOW_POWER_MODE:
-      sdwrite();
       Serial.println("Low power mode active.");
       break;
   }
